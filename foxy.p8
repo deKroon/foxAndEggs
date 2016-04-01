@@ -5,6 +5,9 @@ __lua__
 poke(0x5f2c,3)
 
 tile_size = 8
+world_tile_width = 8
+world_tile_height = 8
+
 -- We'll use this one to limit the animation to certain frames. Otherwise it's too fast.
 animation_frames = 0
 
@@ -21,9 +24,10 @@ foxy.animation_size = 2
 foxy.animation = { 0, 1 }
 
 
+-- Game functions
 
 function _init() 
-		cls()		
+	cls()		
 end
 
 function _update()
@@ -40,32 +44,43 @@ function _draw()
 	spr(foxy.animation[foxy.animation_index], tile_to_world(foxy.position_x), tile_to_world(foxy.position_y))
 end
 
+-- Input
+
 function handle_buttons()
     has_moved = false
     -- left
     if btn(0) then
-        foxy.position_x -= foxy.speed
-        has_moved = true
+        if foxy.position_x - foxy.speed >= 0 then
+            foxy.position_x -= foxy.speed
+            has_moved = true
+        end
 
     -- right
     elseif btn(1) then
-        foxy.position_x += foxy.speed
-        has_moved = true
+        if foxy.position_x + foxy.speed < world_tile_width then
+            foxy.position_x += foxy.speed
+            has_moved = true
+        end
 
     -- up
     elseif btn(2) then
-        foxy.position_y -= foxy.speed
-        has_moved = true
+        if foxy.position_y - foxy.speed >= 0 then
+            foxy.position_y -= foxy.speed
+            has_moved = true
+        end
 
     -- down
     elseif btn(3) then
-        foxy.position_y += foxy.speed
-        has_moved = true
+        if foxy.position_y + foxy.speed < world_tile_height then
+            foxy.position_y += foxy.speed
+            has_moved = true
+        end
     end
 
     return has_moved
 end
 
+-- Animation
 
 function animate_foxy()
     if (animation_frames % 6 == 0) then
@@ -73,11 +88,11 @@ function animate_foxy()
         animation_frames = 0
     end
     if foxy.animation_index > foxy.animation_size then
-        foxy.animation_index = -1
+        foxy.animation_index = 0
     end
 end
 
--- util
+-- Util
 
 function tile_to_world(tile)
     return tile * tile_size
