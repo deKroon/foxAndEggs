@@ -5,17 +5,21 @@ __lua__
 poke(0x5f2c,3)
 
 tile_size = 8
+-- We'll use this one to limit the animation to certain frames. Otherwise it's too fast.
+animation_frames = 0
 
 foxy = {}
 foxy.position_x = 2
 foxy.position_y = 2
 foxy.speed = 1
-foxy.animation_index = 0
+-- Indexes start in 1 in Lua. WTF!
+foxy.animation_index = 1
 -- this is to avoid calling table.getn(foxy.animation) every time. 
 -- i just read that if it can't return the size, it will traverse the array.
 foxy.animation_size = 2
 -- array containing the animation sprites
-foxy.animation = {0,1}
+foxy.animation = { 0, 1 }
+
 
 
 function _init() 
@@ -25,47 +29,51 @@ end
 function _update()
   -- handle buttons
   has_moved = handle_buttons()	
-  -- if has_moved then
-		animate_foxy()
-  -- end
+  --if has_moved then
+    animate_foxy()
+  --end
+  animation_frames += 1
 end
 
 function _draw() 
- map(0,0,0,0,64,64)
+    map(0,0,0,0,64,64)
 	spr(foxy.animation[foxy.animation_index], tile_to_world(foxy.position_x), tile_to_world(foxy.position_y))
 end
 
 function handle_buttons()
- has_moved = false
-        -- left
-        if btn(0) then
-            foxy.position_x -= foxy.speed
-            has_moved = true
+    has_moved = false
+    -- left
+    if btn(0) then
+        foxy.position_x -= foxy.speed
+        has_moved = true
 
-        -- right
-        elseif btn(1) then
-            foxy.position_x += foxy.speed
-            has_moved = true
+    -- right
+    elseif btn(1) then
+        foxy.position_x += foxy.speed
+        has_moved = true
 
-        -- up
-        elseif btn(2) then
-            foxy.position_y -= foxy.speed
-            has_moved = true
+    -- up
+    elseif btn(2) then
+        foxy.position_y -= foxy.speed
+        has_moved = true
 
-        -- down
-        elseif btn(3) then
-            foxy.position_y += foxy.speed
-            has_moved = true
-        end
+    -- down
+    elseif btn(3) then
+        foxy.position_y += foxy.speed
+        has_moved = true
+    end
 
-        return has_moved
+    return has_moved
 end
 
 
-function animate_foxy() 
-    foxy.animation_index += 1
-    if foxy.animation_index > foxy.animation_size -1 then
-        foxy.animation_index = 0
+function animate_foxy()
+    if (animation_frames % 6 == 0) then
+        foxy.animation_index += 1
+        animation_frames = 0
+    end
+    if foxy.animation_index > foxy.animation_size then
+        foxy.animation_index = -1
     end
 end
 
