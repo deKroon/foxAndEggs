@@ -47,8 +47,8 @@ function _update()
 end
 
 function _draw() 
-    map(map_position_x,map_position_y,0,0,tile_to_world(world_tile_width),tile_to_world(world_tile_height))
-	spr(foxy.animation[foxy.animation_index], tile_to_world(foxy.position_x), tile_to_world(foxy.position_y))
+    map(map_position_x,map_position_y,0,0,tile_to_pixels(world_tile_width),tile_to_pixels(world_tile_height))
+	spr(foxy.animation[foxy.animation_index], foxy.position_x, foxy.position_y)
 end
 
 -- input
@@ -67,11 +67,11 @@ function handle_buttons()
 
     -- right
     elseif btn(1) then
-        if foxy.position_x + foxy.speed < world_tile_width then
+        if pixels_to_tile(foxy.position_x + foxy.speed) < world_tile_width then
             foxy.position_x += foxy.speed
             has_moved = true
             -- scroll map
-            if foxy.position_x > map_position_x + world_tile_width/2+1 and map_position_x + 1 <= max_map_x-world_tile_width+1 then
+            if pixels_to_tile(foxy.position_x) > map_position_x + world_tile_width/2+1 and pixels_to_tile(map_position_x + 1) <= max_map_x-world_tile_width+1 then
                 map_position_x += 1
             end
         end
@@ -85,7 +85,7 @@ function handle_buttons()
 
     -- down
     elseif btn(3) then
-        if foxy.position_y + foxy.speed < world_tile_height then
+        if pixels_to_tile(foxy.position_y + foxy.speed) < world_tile_height then
             foxy.position_y += foxy.speed
             has_moved = true
         end
@@ -106,12 +106,21 @@ function animate_foxy()
     end
 end
 
+-- scroll
+
+function scroll_map() 
+
+end
+
 -- util
 
-function tile_to_world(tile)
+function tile_to_pixels(tile)
     return tile * tile_size
 end
 
+function pixels_to_tile(pixel)
+    return pixel / tile_size
+end
 
 __gfx__
 09900990099009905555555500000000dddddddd6666566611111111000000000000000000000000000000000000000000000000000000000000000000000000
