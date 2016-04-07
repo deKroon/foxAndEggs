@@ -7,8 +7,8 @@ poke(0x5f2c,3)
 
 tile_size = 8
 -- total map size
-world_width = 128
-world_height = 64
+world_width = 19 * tile_size
+world_height = 8 * tile_size
 -- visible area 
 scene_width = 64
 scene_height = 64
@@ -87,10 +87,10 @@ function _update()
 end
 
 function _draw() 
-    -- draw the complete map
-    map(0,0,0,0,world_width,world_height)
-    -- set camera in the desired position (used for the scroll)
+       -- set camera in the desired position (used for the scroll)
     camera(camera_x,camera_y)
+     -- draw the complete map
+    map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
     -- draw foxy and chicken :)
 	spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
     spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
@@ -172,25 +172,20 @@ end
 
 -- scroll
 
+function coord_to_scroll(player_position, world_size, scene_size)
+    if player_position <= scene_size/2 then
+        return 0
+    elseif player_position > (world_size - scene_size/2) then
+        return world_size - scene_size
+    else
+        return player_position - scene_size / 2
+    end
+end
+
 function scroll_map() 
-    -- x position
-    if foxy.position_x <= scene_width/2 then
-        camera_x = 0
-    elseif foxy.position_x > world_width - scene_width/2 then
-        camera_x = world_width - scene_width
-    else
-        camera_x = foxy.position_x - scene_width/2
-    end
-
-    -- y position
-    if foxy.position_y < scene_height/2 then
-        camera_y = 0
-    elseif foxy.position_y > world_height - scene_height/2 then
-        camera_y = world_height - scene_height
-    else
-        camera_y = foxy.position_y - scene_height/2
-    end
-
+    -- update camera coordenates
+    camera_x = coord_to_scroll(foxy.position_x, world_width, scene_width)
+    camera_y = coord_to_scroll(foxy.position_y, world_height, scene_height)
 end
 
 -- util
@@ -200,7 +195,7 @@ function tile_to_pixels(tile)
 end
 
 function pixels_to_tile(pixel)
-    return pixel / tile_size
+    return flr(pixel / tile_size)
 end
 
 
