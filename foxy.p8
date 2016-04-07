@@ -3,18 +3,18 @@ version 5
 __lua__
 -- change resolution to 64x64
 poke(0x5f2c,3)
-music(0)
+--music(0)
 
 tile_size = 8
-world_tile_width = 8
-world_tile_height = 8
-
+-- total map size
+world_width = 128
+world_height = 64
+-- visible area 
+scene_width = 64
+scene_height = 64
 -- used for the scroll
-map_position_x = 0
-map_position_y = 0
-
-max_map_x = 16
-max_map_y = 8
+camera_x = 0
+camera_y = 0
 
 -- we'll use this one to limit the animation to certain frames. otherwise it's too fast.
 animation_frames = 0
@@ -56,11 +56,11 @@ function _init()
 end
 
 function _update()
- foxy.animation_speed -= 1
- has_moved = handle_buttons()  
-  if foxy.animation_speed == 0 then
+    foxy.animation_speed -= 1
+    has_moved = handle_buttons()
+
+    if foxy.animation_speed == 0 then
       foxy.animation_speed = 10
-      -- handle buttons
       
       if has_moved then
         foxy.current_animation = foxy.animation_walk
@@ -82,10 +82,16 @@ function _update()
   end
 
   animation_frames += 1
+
+  scroll_map()
 end
 
 function _draw() 
-    map(map_position_x,map_position_y,0,0,tile_to_pixels(world_tile_width),tile_to_pixels(world_tile_height))
+    -- draw the complete map
+    map(0,0,0,0,world_width,world_height)
+    -- set camera in the desired position (used for the scroll)
+    camera(camera_x,camera_y)
+    -- draw foxy and chicken :)
 	spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
     spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
 end
@@ -99,20 +105,13 @@ function handle_buttons()
         if foxy.position_x - foxy.speed >= 0 then
             foxy.position_x -= foxy.speed
             has_moved = true
-            if map_position_x - 1 >= 0 then
-                map_position_x -= 1
-            end
         end
 
     -- right
     elseif btn(1) then
-        if pixels_to_tile(foxy.position_x + foxy.speed) < world_tile_width then
+        if (foxy.position_x + foxy.speed) < world_width then
             foxy.position_x += foxy.speed
-            has_moved = true
-            -- scroll map
-            if pixels_to_tile(foxy.position_x) > map_position_x + world_tile_width/2+1 and pixels_to_tile(map_position_x + 1) <= max_map_x-world_tile_width+1 then
-                map_position_x += 1
-            end
+            has_moved = true            
         end
 
     -- up
@@ -124,7 +123,7 @@ function handle_buttons()
 
     -- down
     elseif btn(3) then
-        if pixels_to_tile(foxy.position_y + foxy.speed) < world_tile_height then
+        if (foxy.position_y + foxy.speed) < world_height then
             foxy.position_y += foxy.speed
             has_moved = true
         end
@@ -174,6 +173,23 @@ end
 -- scroll
 
 function scroll_map() 
+    -- x position
+    if foxy.position_x <= scene_width/2 then
+        camera_x = 0
+    elseif foxy.position_x > world_width - scene_width/2 then
+        camera_x = world_width - scene_width
+    else
+        camera_x = foxy.position_x - scene_width/2
+    end
+
+    -- y position
+    if foxy.position_y < scene_height/2 then
+        camera_y = 0
+    elseif foxy.position_y > world_height - scene_height/2 then
+        camera_y = world_height - scene_height
+    else
+        camera_y = foxy.position_y - scene_height/2
+    end
 
 end
 
