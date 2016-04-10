@@ -126,7 +126,6 @@ function update_game()
       foxy.animation_speed = 10
 
       if has_moved then
-        foxy.current_animation = foxy.animation_walk
         foxy.animation_speed = 7
         foxy.is_idle = false
       elseif not foxy.is_idle then
