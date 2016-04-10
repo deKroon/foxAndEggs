@@ -1,6 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
+-- Foxy (We must play the fox)
+-- Entry for #lowrezjam 2016
+-- Miles, Misato, Mapedorr, Cannonfiddle
+
 -- change resolution to 64x64
 poke(0x5f2c,3)
 
@@ -73,7 +77,7 @@ chicken.animation_speed = 10
 
 
 -- game states
--- There are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
+-- there are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
 game_states = {
     splash = 0,
     game = 1, 
@@ -113,7 +117,7 @@ end
 
 -- update states
 
--- This function is done for code consistency, because we only want to check the buttons here so it won't be necesary.
+-- this function is done for code consistency, because we only want to check the buttons here so it won't be necesary.
 function update_splash()
     handle_buttons_splash()
 end
@@ -151,7 +155,7 @@ function update_game()
 end
 
 function update_game_over()
-    -- TODO handle buttons game over
+    -- todo handle buttons game over
 end
 
 -- drawing states
@@ -173,14 +177,14 @@ function draw_game()
 end
 
 function draw_game_over()
-    -- TODO Game Over screen
+    -- todo game over screen
 end
 
 
 -- input
 
 function handle_buttons_splash()
-    -- Go to main game if you press any button (Z,X or N,M)
+    -- go to main game if you press any button (z,x or n,m)
     if btn(4) or btn(5) then
         state = game_states.game
     end
