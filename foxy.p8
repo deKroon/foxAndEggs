@@ -3,7 +3,6 @@ version 5
 __lua__
 -- change resolution to 64x64
 poke(0x5f2c,3)
---music(0)
 
 tile_size = 8
 -- total map size
@@ -73,77 +72,121 @@ chicken.max_distance = 4
 chicken.animation_speed = 10
 
 
+-- game states
+-- There are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
+game_states = {
+    splash = 0,
+    game = 1, 
+    gameover = 2
+}
+
+state = game_states.splash
+
 -- game functions
 
 function _init()
 	cls()
-	draw_splash()
-end
-
-function draw_splash()
-	camera(camera_x,camera_y)
-	music(0)
-	 -- draw the splash
-	map(31,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
-
+    -- init music
+    music(0)
 end
 
 function _update()
-	if not splash then
-		foxy.animation_speed -= 1
-		has_moved = handle_buttons()
-
-		if foxy.animation_speed == 0 then
-		  foxy.animation_speed = 10
-
-		  if has_moved then
-			foxy.current_animation = foxy.animation_walk
-			foxy.animation_speed = 7
-			foxy.is_idle = false
-		  elseif not foxy.is_idle then
-			foxy.is_idle = true
-			set_foxy_idle()
-			foxy.animation_speed = 20
-		  end
-
-		  animate_foxy()
-		end
-
-		-- move chickens! move!
-		chicken.animation_speed -= 1
-		if chicken.animation_speed == 0 then
-		  chicken.animation_speed = 10
-		  move_chicken()
-		  animate_chicken()
-		end
-
-	  animation_frames += 1
-
-	  scroll_map()
-
-	else
-		has_moved = handle_buttons()
-		if has_moved then
-			splash = false
-		end
-	end
+    if state == game_states.splash then
+        update_splash()
+    elseif state == game_states.game then
+        update_game()
+    elseif state == game_states.gameover then
+        update_game_over()
+    end
 end
 
 function _draw()
-	if not splash then
-		   -- set camera in the desired position (used for the scroll)
-		camera(camera_x,camera_y)
-		 -- draw the complete map
-		map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
-		-- draw foxy and chicken :)
-		spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
-		spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
-	end
+    if state == game_states.splash then
+        draw_splash()
+    elseif state == game_states.game then
+        draw_game()
+    elseif state == game_states.gameover then
+        draw_game_over()
+    end
 end
+
+
+-- update states
+
+-- This function is done for code consistency, because we only want to check the buttons here so it won't be necesary.
+function update_splash()
+    handle_buttons_splash()
+end
+
+function update_game()
+    foxy.animation_speed -= 1
+    has_moved = handle_buttons_game()
+
+    if foxy.animation_speed == 0 then
+      foxy.animation_speed = 10
+
+      if has_moved then
+        foxy.animation_speed = 7
+        foxy.is_idle = false
+      elseif not foxy.is_idle then
+        foxy.is_idle = true
+        set_foxy_idle()
+        foxy.animation_speed = 20
+      end
+
+      animate_foxy()
+    end
+
+    -- move chickens! move!
+    chicken.animation_speed -= 1
+    if chicken.animation_speed == 0 then
+      chicken.animation_speed = 10
+      move_chicken()
+      animate_chicken()
+    end
+
+  animation_frames += 1
+
+  scroll_map()
+end
+
+function update_game_over()
+    -- TODO handle buttons game over
+end
+
+-- drawing states
+
+function draw_splash()
+    camera(camera_x,camera_y)
+     -- draw the splash
+    map(31,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
+end
+
+function draw_game()
+    -- set camera in the desired position (used for the scroll)
+    camera(camera_x,camera_y)
+    -- draw the complete map
+    map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
+    -- draw foxy and chicken :)
+    spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
+    spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
+end
+
+function draw_game_over()
+    -- TODO Game Over screen
+end
+
 
 -- input
 
-function handle_buttons()
+function handle_buttons_splash()
+    -- Go to main game if you press any button (Z,X or N,M)
+    if btn(4) or btn(5) then
+        state = game_states.game
+    end
+end
+
+function handle_buttons_game()
     has_moved = false
     -- left
     if btn(0) then
