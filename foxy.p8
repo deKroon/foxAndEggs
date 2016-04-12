@@ -82,7 +82,7 @@ chicken.animation_speed = 10
 -- there are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
 game_states = {
     splash = 0,
-    game = 1,
+    game = 1, 
     gameover = 2
 }
 
@@ -91,8 +91,8 @@ state = game_states.splash
 -- game functions
 
 function _init()
-    cls()
-    generate_map()
+	cls()
+	generate_map()
     -- init music
     music(0,0,3)
 end
@@ -120,7 +120,7 @@ end
 
 -- state change
 function change_state()
-    cls()
+	cls()
     if state == game_states.splash then
         state = game_states.game
         -- change music
@@ -196,10 +196,13 @@ function draw_game()
     spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
     spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
 
-    for foliage_index=1,foliage_size do
-        spr(84, foliage[foliage_index].x, foliage[foliage_index].y)
-    end
-
+	for foliage_index=1,foliage_size do
+		spr(84, foliage[foliage_index].x, foliage[foliage_index].y)
+	end
+	for decor_index=1,decor_size do
+		spr(decor[decor_index].sprite, decor[decor_index].x, decor[decor_index].y)
+	end
+		
 end
 
 function draw_game_over()
@@ -225,7 +228,7 @@ function handle_buttons_game()
         if foxy.position_x - foxy.speed >= 0 then
             foxy.position_x -= foxy.speed
             has_moved = true
-            foxy.current_animation = foxy.animations.walk.left
+			foxy.current_animation = foxy.animations.walk.left
         end
 
     -- right
@@ -233,7 +236,7 @@ function handle_buttons_game()
         if (foxy.position_x + foxy.speed) < world_width then
             foxy.position_x += foxy.speed
             has_moved = true
-            foxy.current_animation = foxy.animations.walk.right
+			foxy.current_animation = foxy.animations.walk.right
         end
 
     -- up
@@ -241,7 +244,7 @@ function handle_buttons_game()
         if foxy.position_y - foxy.speed >= 0 then
             foxy.position_y -= foxy.speed
             has_moved = true
-            foxy.current_animation = foxy.animations.walk.up
+			foxy.current_animation = foxy.animations.walk.up
         end
 
     -- down
@@ -249,7 +252,7 @@ function handle_buttons_game()
         if (foxy.position_y + foxy.speed) < world_height then
             foxy.position_y += foxy.speed
             has_moved = true
-            foxy.current_animation = foxy.animations.walk.down
+			foxy.current_animation = foxy.animations.walk.down
         end
     end
 
@@ -279,15 +282,15 @@ function animate_foxy()
 end
 
 function set_foxy_idle()
-    animind = flr(rnd(3))
-    foxy.animation_index = 1
-    if(animind==0) then
-        foxy.current_animation = foxy.animations.idle.calm
-    elseif (animind==1) then
-        foxy.current_animation = foxy.animations.idle.medium
-    else
-        foxy.current_animation = foxy.animations.idle.alert
-    end
+	animind = flr(rnd(3))
+	foxy.animation_index = 1
+	if(animind==0) then
+		foxy.current_animation = foxy.animations.idle.calm
+	elseif (animind==1) then
+		foxy.current_animation = foxy.animations.idle.medium
+	else
+		foxy.current_animation = foxy.animations.idle.alert
+	end
 end
 
 function animate_chicken()
@@ -338,101 +341,133 @@ end
 
 foliage = {}
 foliage_size = 0;
+decor = {}
+decor_size = 0;
+
 function generate_map()
-    -- initialize grass
-    add_grass()
-
-    -- add buildings
-    add_buildings()
-
-    -- add foliage
-     add_bushes()
-
-    -- add chickens and eggs
-
+	-- initialize grass
+	add_grass()
+	
+	-- add buildings
+	add_buildings()
+	add_office_decoration()
+	add_windows()
+	add_doors()
+	
+	-- add foliage
+	 add_bushes()
+	
+	-- add chickens and eggs
+	 
 end
 
 -- function to lay out grass
 function add_grass()
-    for x=0,cols do
-        for y=0,rows do
-            if (flr(rnd(100))<=75) then
-                mset(x,y,68)
-            else
-                mset(x,y,69)
-            end
-        end
-    end
+	for x=0,cols do
+		for y=0,rows do
+			if (flr(rnd(100))<=75) then
+				mset(x,y,68)
+			else 
+				mset(x,y,69)
+			end
+		end		
+	end
 end
 
 -- function to make buildings
 function add_buildings()
-    for i=0,flr(rnd(8))+8 do
-        add_building()
-    end
-    for x=0,cols do
-        for y=0,rows do
-            if mget(x,y)==85 then
-                if is_grass(x-1,y) or
-                    is_grass(x+1,y) or
-                    is_grass(x,y-1) or
-                    is_grass(x,y+1) then
-                    mset(x,y,71)
-                end
-            end
-        end
-    end
+	for i=0,flr(rnd(8))+8 do
+		add_building()
+	end
+	for x=0,cols do
+		for y=0,rows do
+			if mget(x,y)==85 then
+				if is_grass(x-1,y) or
+					is_grass(x+1,y) or
+					is_grass(x,y-1) or
+					is_grass(x,y+1) then
+					mset(x,y,71)
+				end
+			end
+		end		
+	end
 end
 
 -- Algorithm for building is drop random rectangles (may overlap)
 function add_building()
-    pos_x = flr(rnd(cols))
-    width = flr(rnd(16))+8
-    if(pos_x+width>=cols) then
-        pos_x -= width
-    end
-
-    pos_y = flr(rnd(rows))
-    height = flr(rnd(16))+8
-    if(pos_y+height>=rows) then
-        pos_y -= height
-    end
-
-    for x=pos_x,pos_x+width do
-        for y=pos_y,pos_y+height do
-            mset(x,y,85)
-        end
-    end
+	pos_x = flr(rnd(cols))
+	width = flr(rnd(16))+8
+	if(pos_x+width>=cols) then
+		pos_x -= width
+	end
+	
+	pos_y = flr(rnd(rows))
+	height = flr(rnd(16))+8
+	if(pos_y+height>=rows) then
+		pos_y -= height
+	end
+	
+	for x=pos_x,pos_x+width do
+		for y=pos_y,pos_y+height do
+			mset(x,y,85)
+		end		
+	end
 end
 
-function add_floorplan()
+function add_doors()
 
+end
+
+function add_windows()
+
+end
+
+function add_office_decoration()
+	for x=0,cols do
+		for y=0,rows do
+			if mget(x,y)==85 then 
+				add_random_decor(x*8,y*8)
+			end
+		end		
+	end
+end
+
+decors = {76, 77, 78, 79, 92, 93, 94, 95}
+function add_random_decor(x,y)
+	if (flr(rnd(100))<=10) then
+		decor_size += 1
+		decor[decor_size] = {}
+		decor[decor_size].x = x
+		decor[decor_size].y = y
+		random_number = flr(rnd(8))+1
+		decor[decor_size].sprite = decors[random_number]
+	end
 end
 
 -- function to add bushes
 function add_bushes()
-    for x=0,cols do
-        for y=0,rows do
-            if is_grass(x,y) then
-                add_bush(x*8,y*8)
-            end
-        end
-    end
+	for x=0,cols do
+		for y=0,rows do
+			if is_grass(x,y) then 
+				add_bush(x*8,y*8)
+			end
+		end		
+	end
 end
 
 function add_bush(x,y)
-    if (flr(rnd(100))<=10) then
-        foliage_size += 1
-        foliage[foliage_size] = {}
-        foliage[foliage_size].x = x
-        foliage[foliage_size].y = y
-    end
+	if (flr(rnd(100))<=10) then
+		foliage_size += 1
+		foliage[foliage_size] = {}
+		foliage[foliage_size].x = x
+		foliage[foliage_size].y = y
+	end
 end
 
 function is_grass(x,y)
-    if mget(x,y)==68 or mget(x,y)==69 then
-        return true
-    end
+	if mget(x,y)==68 or mget(x,y)==69 then 
+		return true
+	end
 end
 
 __gfx__
@@ -468,22 +503,22 @@ __gfx__
 00dddd0000dddd0000dddd0000dddd0009dddd9000dddd0009dddd0000dddd900000000000000000000000000000000000000000000000000000000000000000
 09dddd9009dddd9009dddd9009dddd9000dddd0009dddd9000dddd9009dddd000000000000000000000000000000000000000000000000000000000000000000
 00900900009009000090090000900900009009000090090000900000000009000000000000000000000000000000000000000000000000000000000000000000
-00008800000088000088000000880000bbbbbbbbbbbbbbbb666666664555455545554555bbbbbbbbbbbbbbbbbbbbbbbb00000000000000000000000000000000
-00007770000077700777000007770000bbbbbb3bb3bbbbbb666666664444444449999994bb44d4bbbb4444bbbb44d4bb00000000000000000000000000000000
-00007170000071700717000007170000bbb3bbbbbbbbb3bb666666665545554559444495b4444d4bb458854bb884488b00000000000000000000000000000000
-00007799000077999977000099770000bbbbbbbbbbbbbbbb666666664444444449444494bd44444bb577775bb899998b00000000000000000000000000000000
-07777770077777700777777007777770bbbbbbbbbbbbbbbb666666664555455549444495b5d4444bb517715bb999999b00000000000000000000000000000000
-00777770007777700777770007777700bbbbb3bbbbb3bbbb666666664444444449444494b5555d5bb579975bb719917b00000000000000000000000000000000
-00077700000777000077700000777000b3bbbbbbbbbbbbbb666666665545554559444495bb5555bbbb6776bbbb6116bb00000000000000000000000000000000
-00009000000009000009000000900000bbbbbbbbbbbbbbb3666666664444444449444494bbbbbbbbbbbbbbbbbbbbbbbb00000000000000000000000000000000
-00888800008888000088880000888800000333004444444445554555455545557777777700000000000000000000000000000000000000000000000000000000
-00777700007777000078870000788700003333304444444446666664466666647777777700033300003330000033330000000000000000000000000000000000
-0017710000177100007777000077770003838b334444444456111165567111657777777700333330033333000333333000000000000000000000000000000000
-00799700007997000077770000777700333333334444444446111164461111647777777703838b333838b33003838b3330000000000000000000000000000000
-0777777000777700077777700777777033b338334444444446111165461111657777777733333333333333333333333330000000000000000000000000000000
-00777700077777700077770000777700383333334444444446666664466666647777777733b338333b33833333b3383300000000000000000000000000000000
-00777700007777000077770000777700333333304444444455455545554555457777777733333330333333333333333000000000000000000000000000000000
-00009000000900000000900000090000033333304444444444444444444444447777777703333330033333300333333000000000000000000000000000000000
+00008800000088000088000000880000bbbbbbbbbbbbbbbb666666664555455545554555bbbbbbbbbbbbbbbbbbbbbbbb09899800077777700577775000000000
+00007770000077700777000007770000bbbbbb3bb3bbbbbb666666664444444449999994bb44d4bbbb4444bbbb44d4bb09888890071111700517775000666600
+00007170000071700717000007170000bbb3bbbbbbbbb3bb666666665545554559444495b4444d4bb458854bb884488b98888889071111700517775006555560
+00007799000077999977000099770000bbbbbbbbbbbbbbbb666666664444444449444494bd44444bb577775bb899998b9888888957111175057775500d666660
+07777770077777700777777007777770bbbbbbbbbbbbbbbb666666664555455549444495b5d4444bb517715bb999999b8888888857777775055555500d666660
+00777770007777700777770007777700bbbbb3bbbbb3bbbb666666664444444449444494b5555d5bb579975bb719917b0006600055555555055555500d666660
+00077700000777000077700000777000b3bbbbbbbbbbbbbb666666665545554559444495bb5555bbbb6776bbbb6116bb000d6000d00000060d0000600d666660
+00009000000009000009000000900000bbbbbbbbbbbbbbb3666666664444444449444494bbbbbbbbbbbbbbbbbbbbbbbb00dd6600d00000060d00006000dd6600
+0088880000888800008888000088880000033300444444444555455545554555777777770000000000000000000000000800000000000080000b700000800000
+007777000077770000788700007887000033333044444444466666644666666477777777000333000033300000333300080000000000008007bbbb000858b000
+0017710000177100007777000077770003838b3344444444561111655671116577777777003333300333330003333330080000000000008000b7bb7000800b30
+00799700007997000077770000777700333333334444444446111164461111647777777703838b333838b33003838b33080000000000008007bbbb0000000b00
+0777777000777700077777700777777033b3383344444444461111654611116577777777333333333333333333333333088888000088888000bbb7000000b000
+00777700077777700077770000777700383333334444444446666664466666647777777733b338333b33833333b33833088888000088888005b7bb5005555550
+0077770000777700007777000077770033333330444444445545554555455545777777773333333033333333333333300d000d0000d000d0053bbb5000555500
+0000900000090000000090000009000003333330444444444444444444444444777777770333333003333330033333300d000d0000d000d00555555000555500
 000ff000000000000000000000000000455545554555455566666666666666660000000000000000000000000000000000000000000000000000000000000000
 00f77f00000ff00000ff00000000ff0049999994499999946c7cccc66cccc7c60000000000000000000000000000000000000000000000000000000000000000
 0f7777f000f77f000f77f000000f77f059666695596666956cc7ccc66cccccc60000000000000000000000000000000000000000000000000000000000000000
