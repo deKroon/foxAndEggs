@@ -9,7 +9,7 @@ __lua__
 poke(0x5f2c,3)
 
 tile_size = 8
--- total map size (We use 120 and up for splash
+-- total map size (we use 120 and up for splash
 cols = 119
 rows = 32
 world_width = cols * tile_size
@@ -63,20 +63,23 @@ foxy.animations.idle.alert = { 0, 1, 2, 3, 4, 4, 6, 7 };
 foxy.animations.victory_dance = { 54, 55, 54, 55, 53, 53, 52, 52 };
 foxy.animations.rotation = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
--- lets add some evil chickens
-chicken = {}
-chicken.position_x = 7
-chicken.original_x = chicken.position_x
-chicken.position_y = 0
-chicken.original_y = chicken.position_y
-chicken.speed = 1
-chicken.animation_index = 1
-chicken.animation_size = 2
-chicken.animation = { 80, 81, 82, 83 }
-chicken.movement_dir = 1
-chicken.max_distance = 4
-chicken.animation_speed = 10
+-- vars for chkickens creation
+chickens_amount = flr(rnd(8)+2)
+chickens = {}
+chickens.animation_size = 8
+chickens.chickens_array = {}
+chickens.animations = {}
 
+chickens.animations.walk = {}
+chickens.animations.walk.animation_speed = 7
+chickens.animations.walk.up = { 80, 81, 80, 81, 80, 81, 80, 81 }
+chickens.animations.walk.down = { 82, 83, 82, 83, 82, 83, 82, 83 }
+chickens.animations.walk.left = { 66, 67, 66, 67, 66, 67, 66, 67 }
+chickens.animations.walk.right = { 64, 65, 64, 65, 64, 65, 64, 65 }
+
+chickens.animations.idle = {}
+chickens.animations.idle.animation_speed = 3
+chickens.animations.idle.peck = { 105, 106, 107, 108, 105, 105, 105, 105 }
 
 -- game states
 -- there are no enum in lua so followed the advice from here: https://www.allegro.cc/forums/thread/605178
@@ -125,6 +128,11 @@ function change_state()
         state = game_states.game
         -- change music
         music(8,0,3)
+        -- lets add some chickens endemoniados
+        for i = 1, chickens_amount do
+            -- chickens[0] has the animations for the chickens
+            chickens.chickens_array[i] = create_chicken()
+        end
     elseif state == game_states.game then
         state = game_states.gameover
     elseif state == game_states.gameover then
@@ -161,11 +169,10 @@ function update_game()
     end
 
     -- move chickens! move!
-    chicken.animation_speed -= 1
-    if chicken.animation_speed == 0 then
-      chicken.animation_speed = 10
-      move_chicken()
-      animate_chicken()
+    for i = 1, chickens_amount do
+        update_chicken_timers(chickens.chickens_array[i])
+        update_chicken_movement(chickens.chickens_array[i])
+        update_chicken_animation(chickens.chickens_array[i])
     end
 
   animation_frames += 1
@@ -190,11 +197,18 @@ end
 function draw_game()
     -- set camera in the desired position (used for the scroll)
     camera(camera_x,camera_y)
+
     -- draw the complete map
     map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
+
     -- draw foxy and chicken :)
     spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
-    spr(chicken.animation[chicken.animation_frame], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
+
+    -- draw chickens
+    for i = 1, chickens_amount do
+        chicken = chickens.chickens_array[i]
+        spr(chicken.current_animation[chicken.animation_index], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
+    end
 
 	for foliage_index=1,foliage_size do
 		spr(84, foliage[foliage_index].x, foliage[foliage_index].y)
@@ -261,14 +275,39 @@ end
 
 
 -- movement
-function move_chicken()
-    if chicken.movement_dir == 1 then
-        if chicken.original_y + chicken.position_y == chicken.max_distance then
-            chicken.speed = -1
-        elseif chicken.original_y == chicken.position_y then
-            chicken.speed = 1
+function update_chicken_movement(chicken)
+    if (chicken.in_idle == 0 and chicken.movement_speed == 0) then
+        if (chicken.patrol_dir == 1) then
+            chicken.position_y += chicken.movement_dir
+        elseif (chicken.patrol_dir == 2) then
+            chicken.position_x += chicken.movement_dir
         end
-        chicken.position_y += chicken.speed
+
+        if chicken.movement_dir == 1 then
+            if (chicken.patrol_dir == 1) then
+                if chicken.position_y >= chicken.original_y + chicken.max_distance then
+                    chicken.movement_dir = -1
+                    chicken.in_idle = chicken.wait_idle
+                end
+            elseif (chicken.patrol_dir == 2) then
+                if chicken.position_x >= chicken.original_x + chicken.max_distance then
+                    chicken.movement_dir = -1
+                    chicken.in_idle = chicken.wait_idle
+                end
+            end
+        elseif chicken.movement_dir == -1 then
+            if (chicken.patrol_dir == 1) then
+                if chicken.position_y <= chicken.original_y then
+                    chicken.movement_dir = 1
+                    chicken.in_idle = chicken.wait_idle
+                end
+            elseif (chicken.patrol_dir == 2) then
+                if chicken.position_x <= chicken.original_x then
+                    chicken.movement_dir = 1
+                    chicken.in_idle = chicken.wait_idle
+                end
+            end
+        end
     end
 end
 
@@ -293,20 +332,33 @@ function set_foxy_idle()
 	end
 end
 
-function animate_chicken()
-    chicken.animation_index += 1
-    if chicken.animation_index > chicken.animation_size then
-        chicken.animation_index = 1
-    end
+function update_chicken_animation(chicken)
+    if chicken.animation_speed == 0 then
+        chicken.animation_index += 1
+        if chicken.animation_index > chickens.animation_size then
+            chicken.animation_index = 1
+        end
 
-    -- set the frame
-    if chicken.speed == 1 then
-        chicken.animation_frame = 0
-    elseif chicken.speed == -1 then
-        chicken.animation_frame = 2
+        if (chicken.in_idle > 0) then
+            chicken.current_animation = chickens.animations.idle.peck
+            chicken.current_animation_speed = chickens.animations.idle.animation_speed
+        else
+            chicken.current_animation_speed = chickens.animations.walk.animation_speed
+            if (chicken.movement_dir == 1) then
+                if (chicken.patrol_dir == 1) then
+                    chicken.current_animation = chickens.animations.walk.up
+                elseif (chicken.patrol_dir == 2) then
+                    chicken.current_animation = chickens.animations.walk.right
+                end
+            elseif (chicken.movement_dir == -1) then
+                if (chicken.patrol_dir == 1) then
+                    chicken.current_animation = chickens.animations.walk.down
+                elseif (chicken.patrol_dir == 2) then
+                    chicken.current_animation = chickens.animations.walk.left
+                end
+            end
+        end
     end
-
-    chicken.animation_frame += chicken.animation_index
 end
 
 -- scroll
@@ -335,6 +387,58 @@ end
 
 function pixels_to_tile(pixel)
     return flr(pixel / tile_size)
+end
+
+function create_chicken()
+    chicken = {}
+
+    -- properties for drawing position
+    chicken.position_x = flr(rnd(18))
+    chicken.original_x = chicken.position_x
+    chicken.position_y = flr(rnd(7))
+    chicken.original_y = chicken.position_y
+
+    -- properties for movement handling
+    chicken.movement_dir = 1
+    chicken.patrol_dir = flr(rnd(2)+1)
+    chicken.movement_speed = 5 + flr(rnd(5))
+    chicken.ori_movement_speed = chicken.movement_speed
+    chicken.max_distance = 4 + rnd(4)
+    if (chicken.patrol_dir == 1 and tile_to_pixels(chicken.position_y + chicken.max_distance) > world_height - 8) then
+        chicken.max_distance = ((world_height - 8) - tile_to_pixels(chicken.position_y)) / 8
+    elseif (chicken.patrol_dir == 2 and tile_to_pixels(chicken.position_x + chicken.max_distance) > world_width - 8) then
+        chicken.max_distance = ((world_width - 8) - tile_to_pixels(chicken.position_x)) / 8
+    end
+
+    -- properties for animation
+    chicken.current_animation = chickens.animations.idle.peck
+    chicken.current_animation_speed = chickens.animations.idle.animation_speed
+    chicken.animation_speed = chicken.current_animation_speed
+    chicken.animation_index = 1
+
+    -- properties for timers
+    chicken.wait_idle = 60
+    chicken.in_idle = chicken.wait_idle
+
+    return chicken
+end
+
+function update_chicken_timers(chicken)
+    if (chicken.in_idle > 0) then
+        chicken.in_idle -= 1
+    end
+    
+    if (chicken.movement_speed > 0) then
+        chicken.movement_speed -= 1
+    else
+        chicken.movement_speed = chicken.ori_movement_speed
+    end
+
+    if (chicken.animation_speed > 0) then
+        chicken.animation_speed -= 1
+    else
+        chicken.animation_speed = chicken.current_animation_speed
+    end
 end
 
 -- map generator
@@ -393,7 +497,7 @@ function add_buildings()
 	end
 end
 
--- Algorithm for building is drop random rectangles (may overlap)
+-- algorithm for building is drop random rectangles (may overlap)
 function add_building()
 	pos_x = flr(rnd(cols))
 	width = flr(rnd(16))+8
@@ -519,14 +623,14 @@ __gfx__
 00777700077777700077770000777700383333334444444446666664466666647777777733b338333b33833333b33833088888000088888005b7bb5005555550
 0077770000777700007777000077770033333330444444445545554555455545777777773333333033333333333333300d000d0000d000d0053bbb5000555500
 0000900000090000000090000009000003333330444444444444444444444444777777770333333003333330033333300d000d0000d000d00555555000555500
-000ff000000000000000000000000000455545554555455566666666666666660000000000000000000000000000000000000000000000000000000000000000
-00f77f00000ff00000ff00000000ff0049999994499999946c7cccc66cccc7c60000000000000000000000000000000000000000000000000000000000000000
-0f7777f000f77f000f77f000000f77f059666695596666956cc7ccc66cccccc60000000000000000000000000000000000000000000000000000000000000000
-0f7777f00f7777f0f7777f0000f7777f49666694496666946cccccc66cccccc60000000000000000000000000000000000000000000000000000000000000000
-f777777ff777777ff77777f00f77777f49999995499999956cccccc66cccccc60000000000000000000000000000000000000000000000000000000000000000
-6777777f6777777f6777777ff777777f4999aa9449aa99946cccccc66cccccc60000000000000000000000000000000000000000000000000000000000000000
-067777f0067777f0067777f0067777f0599999955999999566666666666666660000000000000000000000000000000000000000000000000000000000000000
-0066ff000066ff000066ff000066ff00499999944999999444444444444444440000000000000000000000000000000000000000000000000000000000000000
+000ff000000000000000000000000000455545554555455566666666666666660000000000888800000000000007700000000000000000000000000000000000
+00f77f00000ff00000ff00000000ff0049999994499999946c7cccc66cccc7c60000000000777700008888000008800000077000000000000000000000000000
+0f7777f000f77f000f77f000000f77f059666695596666956cc7ccc66cccccc60000000000177100007777000088880000077000000000000000000000000000
+0f7777f00f7777f0f7777f0000f7777f49666694496666946cccccc66cccccc60000000000799700001771000077770000777700000000000000000000000000
+f777777ff777777ff77777f00f77777f49999995499999956cccccc66cccccc60000000000777700007997000017710000777700000000000000000000000000
+6777777f6777777f6777777ff777777f4999aa9449aa99946cccccc66cccccc60000000000777700007777000079970000788700000000000000000000000000
+067777f0067777f0067777f0067777f0599999955999999566666666666666660000000000777700007777000077770000888800000000000000000000000000
+0066ff000066ff000066ff000066ff00499999944999999444444444444444440000000000099000000990000009900000099000000000000000000000000000
 000f1000000f10000070070700000000000000000000000000000000000aa0000000000000000000000000000000000000000000000000000000000000000000
 00f71f0000f71f0070000000700aa000000aa00000aa00000000aa0000aaaa000000000000000000000000000000000000000000000000000000000000000000
 0f7177f00f7177f00700007000aaaa0700aaaa000aaaa000000aaaa0001aa1000000000000000000000000000000000000000000000000000000000000000000
