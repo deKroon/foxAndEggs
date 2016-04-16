@@ -8,6 +8,11 @@ __lua__
 -- change resolution to 64x64
 poke(0x5f2c,3)
 
+-- config stuff
+config = {}
+config.debug = false
+config.music = true
+
 tile_size = 8
 -- total map size (we use 120 and up for splash
 cols = 119
@@ -105,7 +110,9 @@ function _init()
 	cls()
 	generate_map()
     -- init music
-    music(0,0,3)
+	if config.music then
+		music(0,0,3)
+	end
 end
 
 function _update()
@@ -135,7 +142,11 @@ function change_state()
     if state == game_states.splash then
         state = game_states.game
         -- change music
-        music(8,0,3)
+		
+		if config.music then
+			music(8,0,3)
+		end
+		
         -- lets add some chickens endemoniados
         for i = 1, chickens_amount do
             -- chickens[0] has the animations for the chickens
@@ -248,10 +259,11 @@ function draw_game()
         spr(chickens.alert.sprite, chickens.alert.position_x, chickens.alert.position_y)
     end
 	
-	-- draw_minimap()
-	
-	-- Uses this to draw larger chunk of map at bottom 2 rows
-	draw_debug_minimap()
+	if not config.debug then
+		draw_minimap()
+	else 
+		draw_debug_minimap()
+	end
 end
 
 function draw_game_over()
