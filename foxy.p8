@@ -10,12 +10,12 @@ poke(0x5f2c,3)
 
 -- config stuff
 config = {}
-config.debug = false
-config.music = true
+config.debug = true
+config.music = false
 
 tile_size = 8
 -- total map size (we use 120 and up for splash
-cols = 119
+cols = 118
 rows = 32
 world_width = cols * tile_size
 world_height = rows * tile_size
@@ -587,17 +587,82 @@ function generate_map()
 	-- initialize grass
 	add_grass()
 	
-	-- add buildings
-	add_buildings()
-	add_windows()
-	add_doors()
+	-- Dungeon Maze hybrid
+	generate_base()
 	
+	-- add buildings
+	--[[
+		add_buildings()
+		add_windows()
+		add_doors()
+	]]--
 	-- add foliage and decor
 	 add_decor()
 	
 	-- add chickens and eggs
 	 
 end
+
+rectangles = {}
+function generate_base()
+	add_rectangles(50)
+	draw_rectangles()
+
+
+end
+
+function add_rectangles(retries)
+	orig_retries = retries
+	while(retries>0) do
+		rect_w = flr(rnd(12))+4
+		rect_h = flr(rnd(8))+4
+		rect_x = flr(rnd(cols - rect_w))
+		rect_y = flr(rnd(rows - rect_h))
+		rect_placable = true
+		for i=1,#rectangles do 
+			rect = rectangles[i]
+			if (rect.x <= rect_x+rect_w and rect.x+rect.w >= rect_x )then
+				if (rect.y <= rect_y+rect_h and rect.y+rect.h >= rect_y) then
+					rect_placable = false
+					retries -= 1
+					break
+				end			
+			end
+		end
+		if(rect_placable) then
+			retries = orig_retries
+			add(rectangles, {x=rect_x, y=rect_y, w=rect_w, h=rect_h})
+		end
+	end
+end
+
+function draw_rectangles()
+	for i=1,#rectangles do 
+		rect = rectangles[i]
+		for x=rect.x,rect.x+rect.w do
+			for y=rect.y,rect.y+rect.h do
+				mset(x,y,85)
+			end
+		end
+	end
+	for x=0,cols do
+		for y=0,rows do
+			if mget(x,y)==85 then
+				if 	is_grass(x-1,y-1) or
+					is_grass(x-1,y) or
+					is_grass(x-1,y+1) or
+					is_grass(x,y-1) or
+					is_grass(x,y+1) or
+					is_grass(x+1,y-1) or
+					is_grass(x+1,y) or
+					is_grass(x+1,y+1) then
+					mset(x,y,71)
+				end
+			end
+		end		
+	end
+end
+
 
 -- function to lay out grass
 function add_grass()
@@ -612,8 +677,14 @@ function add_grass()
 	end
 end
 
+roads ={}
+roads_index = 1
+
+
 -- function to make buildings
 function add_buildings()
+
+	--[[
 	for i=0,flr(rnd(8))+8 do
 		add_building()
 	end
@@ -629,6 +700,7 @@ function add_buildings()
 			end
 		end		
 	end
+	]]--
 end
 
 -- algorithm for building is drop random rectangles (may overlap)
