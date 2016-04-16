@@ -245,16 +245,21 @@ function draw_game()
         spr(chicken.current_animation[chicken.animation_index], chicken.position_x, chicken.position_y)
     end
 
-    -- draw foxy
-    spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
-
-	for foliage_index=1,foliage_size do
-		spr(84, foliage[foliage_index].x, foliage[foliage_index].y)
-	end
+	foxy_drawn = false
 	for decor_index=1,decor_size do
-		spr(decor[decor_index].sprite, decor[decor_index].x, decor[decor_index].y)
+		if (camera_x-8) < decor[decor_index].x and decor[decor_index].x < camera_x+72 and (camera_y-8) < decor[decor_index].y and decor[decor_index].y < camera_y+72 then
+			if(not foxy_drawn and (foxy.position_y < decor[decor_index].y) ) then
+				-- draw foxy
+				spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
+				foxy_drawn= true
+			end
+			spr(decor[decor_index].sprite, decor[decor_index].x, decor[decor_index].y)
+		end
 	end
-
+	if (not foxy_drawn) then 
+		-- draw foxy
+		spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
+	end
     if chickens.alert.visible then
         spr(chickens.alert.sprite, chickens.alert.position_x, chickens.alert.position_y)
     end
@@ -573,9 +578,8 @@ function update_chicken_timers(chicken)
 end
 
 -- map generator
-
-foliage = {}
-foliage_size = 0;
+foliage ={84, 89, 90, 91}
+decors = {76, 77, 78, 79, 92, 93, 94, 95}
 decor = {}
 decor_size = 0;
 
@@ -585,12 +589,11 @@ function generate_map()
 	
 	-- add buildings
 	add_buildings()
-	add_office_decoration()
 	add_windows()
 	add_doors()
 	
-	-- add foliage
-	 add_bushes()
+	-- add foliage and decor
+	 add_decor()
 	
 	-- add chickens and eggs
 	 
@@ -657,17 +660,18 @@ function add_windows()
 
 end
 
-function add_office_decoration()
-	for x=0,cols do
-		for y=0,rows do
+function add_decor()
+	for y=0,rows do
+		for x=0,cols do
 			if mget(x,y)==85 then 
 				add_random_decor(x*8,y*8)
+			elseif is_grass(x,y) then 
+				add_bush(x*8,y*8)
 			end
 		end		
 	end
 end
 
-decors = {76, 77, 78, 79, 92, 93, 94, 95}
 function add_random_decor(x,y)
 	if (flr(rnd(100))<=10) then
 		decor_size += 1
@@ -679,23 +683,14 @@ function add_random_decor(x,y)
 	end
 end
 
--- function to add bushes
-function add_bushes()
-	for x=0,cols do
-		for y=0,rows do
-			if is_grass(x,y) then 
-				add_bush(x*8,y*8)
-			end
-		end		
-	end
-end
-
 function add_bush(x,y)
 	if (flr(rnd(100))<=10) then
-		foliage_size += 1
-		foliage[foliage_size] = {}
-		foliage[foliage_size].x = x
-		foliage[foliage_size].y = y
+		decor_size += 1
+		decor[decor_size] = {}
+		decor[decor_size].x = x
+		decor[decor_size].y = y
+		random_number = flr(rnd(4))+1
+		decor[decor_size].sprite = foliage[random_number]
 	end
 end
 
