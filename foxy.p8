@@ -248,10 +248,10 @@ function draw_game()
         spr(chickens.alert.sprite, chickens.alert.position_x, chickens.alert.position_y)
     end
 	
-	draw_minimap()
+	-- draw_minimap()
 	
 	-- Uses this to draw larger chunk of map at bottom 2 rows
-	--  draw_debug_minimap()
+	draw_debug_minimap()
 end
 
 function draw_game_over()
@@ -727,29 +727,26 @@ end
 function draw_debug_minimap()
 	-- Draw pixels 
 	start_x = camera_x/8
-	start_y = camera_y/8
+	start_y = 0
 	
-	if( start_x+16>world_width/8) then
-		start_x = world_width/8 -16
-	end
-	if( start_y+16>world_height/8) then
-		start_y = world_height/8 -16
+	if( start_x+64>world_width/8) then
+		start_x = world_width/8 - 64
 	end
 	
-	for x=1,64 do
-		for y=1,16 do
+	for x=0,64 do
+		for y=0,32 do
 			tile = mget(start_x+x,start_y+y)
 			tile_x = tile%16
 			tile_y = tile/16
 			color = sget(tile_x*8+5,tile_y*8+5)
 
-			pset(camera_x+x,camera_y+48+y,color)
+			pset(camera_x+x,camera_y+y+32,color)
 		end
 	end
 	
 	fox_x = flr( ( (foxy.position_x-start_x*8))/8)
 	fox_y = flr( ( (foxy.position_y-start_y*8))/8)
-	pset(camera_x+fox_x, camera_y+fox_y+48,9)
+	pset(camera_x+fox_x, camera_y+fox_y+32,9)
 end
 
 __gfx__
