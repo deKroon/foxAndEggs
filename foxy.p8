@@ -10,8 +10,8 @@ poke(0x5f2c,3)
 
 -- config stuff
 config = {}
-config.debug = true
-config.music = false
+config.debug = false
+config.music = true
 
 tile_size = 8
 -- total map size (we use 120 and up for splash
@@ -605,9 +605,88 @@ end
 
 rectangles = {}
 function generate_base()
+	-- Add the buildings
 	add_rectangles(50)
 	draw_rectangles()
 
+	-- Add the roads
+	add_roads()
+end
+
+road_worker = {x=1, y=1, dirs={1,2,3,4}, dir=flr(rnd(4)+1), prob=0.1}
+workers = {road_worker}
+function add_roads()
+	-- Place workers on map
+	for x=0,cols do
+		for y=0,rows do
+			if is_grass(x,y) then
+				if(rnd(1)<0.005) then
+					add(workers, {x=x, y=y, dirs={1,2,3,4}, dir=flr(rnd(4)+1), prob=0.1})
+				end	
+			end
+		end
+	end
+
+	-- While alive workers
+	while #workers>0 do
+		-- For each worker take 1 step
+		for worker in all(workers) do
+			worker_step(worker)
+		end
+	end
+end
+
+function worker_step(worker)
+	mset(worker.x, worker.y, 70)
+	take_step(worker)
+	if(rnd(1)<worker.prob) then
+		worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
+		if(rnd(1)<0.01) then
+			new_worker = {x=worker.x, y=worker.y, dir=1, dirs={1,2,3,4}, prob=0.1}
+			add(workers, new_worker)
+		end
+	end	
+
+	if(#worker.dirs<=0) then
+		del(workers, worker)
+	end	
+	
+end
+
+function take_step(worker) 
+	if(worker.dir==1) then
+		if worker.y-1>0 and is_grass(worker.x, worker.y-1)  then
+			worker.dirs = {1,2,3,4}
+			worker.y -= 1
+		else
+			del(worker.dirs, 1)
+			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
+		end
+	elseif(worker.dir==2) then
+		if worker.x+1<cols-1 and is_grass(worker.x+1, worker.y)  then
+			worker.dirs = {1,2,3,4}
+			worker.x+=1
+		else
+			del(worker.dirs, 2)
+			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
+		end
+	elseif(worker.dir==3) then
+		if worker.y+1<rows-1 and is_grass(worker.x, worker.y+1)  then
+			worker.dirs = {1,2,3,4}
+			worker.y+=1
+		else
+			del(worker.dirs, 3)
+			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
+		end
+	else
+		if worker.x-1>0 and is_grass(worker.x-1, worker.y) then
+			worker.dirs = {1,2,3,4}
+			worker.x-=1
+		else
+			del(worker.dirs, 4)
+			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
+		end
+	end
 
 end
 
@@ -616,7 +695,7 @@ function add_rectangles(retries)
 	while(retries>0) do
 		rect_w = flr(rnd(12))+4
 		rect_h = flr(rnd(8))+4
-		rect_x = flr(rnd(cols - rect_w))
+		rect_x = flr(rnd(cols - rect_w-8)+8)
 		rect_y = flr(rnd(rows - rect_h))
 		rect_placable = true
 		for i=1,#rectangles do 
@@ -787,12 +866,12 @@ function draw_minimap()
 		start_y = world_height/8 -16
 	end
 	
-	for x=1,16 do
-		for y=1,16 do
+	for x=0,16 do
+		for y=0,16 do
 			tile = mget(start_x+x,start_y+y)
 			tile_x = tile%16
 			tile_y = tile/16
-			color = sget(tile_x*8+5,tile_y*8+5)
+			color = sget(tile_x*8+1,tile_y*8+1)
 
 			pset(camera_x+48+x,camera_y+48+y,color)
 		end
