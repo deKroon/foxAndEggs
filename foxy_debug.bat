@@ -1,0 +1,1 @@
+PICO8 -run foxy.p8

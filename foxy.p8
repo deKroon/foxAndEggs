@@ -64,16 +64,24 @@ foxy.animations.victory_dance = { 54, 55, 54, 55, 53, 53, 52, 52 };
 foxy.animations.rotation = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 -- vars for chkickens creation
-chickens_amount = flr(rnd(8)+2)
+chickens_amount = 10
+-- chickens_amount = 1
 chickens = {}
 chickens.animation_size = 8
 chickens.chickens_array = {}
 chickens.animations = {}
+chickens.alert = {}
+chickens.alert.sprite = 104
+chickens.alert.visible = false
+chickens.alert.position_x = 0
+chickens.alert.position_y = 0
+chickens.fieldview_sprite = 120
+chickens.fox_found = false
 
 chickens.animations.walk = {}
 chickens.animations.walk.animation_speed = 7
-chickens.animations.walk.up = { 80, 81, 80, 81, 80, 81, 80, 81 }
-chickens.animations.walk.down = { 82, 83, 82, 83, 82, 83, 82, 83 }
+chickens.animations.walk.down = { 80, 81, 80, 81, 80, 81, 80, 81 }
+chickens.animations.walk.up = { 82, 83, 82, 83, 82, 83, 82, 83 }
 chickens.animations.walk.left = { 66, 67, 66, 67, 66, 67, 66, 67 }
 chickens.animations.walk.right = { 64, 65, 64, 65, 64, 65, 64, 65 }
 
@@ -148,8 +156,28 @@ function update_splash()
 end
 
 function update_game()
+    -- move chickens! move!
+    chickens.fox_found = false
+    for i = 1, chickens_amount do
+        chicken = chickens.chickens_array[i]
+
+        update_chicken_timers(chicken)
+
+        -- check if foxy is in front of me...yikes!
+        -- if not chickens.alert.visible then
+            update_chicken_movement(chicken)
+            update_chicken_animation(chicken)
+        -- end
+
+        if not chickens.fox_found then
+            lookfor_foxy(chicken)
+        end
+    end
+
     foxy.animation_speed -= 1
-    has_moved = handle_buttons_game()
+    -- if not chickens.fox_found then
+        has_moved = handle_buttons_game()
+    -- end
 
     if foxy.animation_speed == 0 then
       foxy.animation_speed = 10
@@ -166,13 +194,6 @@ function update_game()
       end
 
       animate_foxy()
-    end
-
-    -- move chickens! move!
-    for i = 1, chickens_amount do
-        update_chicken_timers(chickens.chickens_array[i])
-        update_chicken_movement(chickens.chickens_array[i])
-        update_chicken_animation(chickens.chickens_array[i])
     end
 
   animation_frames += 1
@@ -201,14 +222,20 @@ function draw_game()
     -- draw the complete map
     map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
 
-    -- draw foxy and chicken :)
-    spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
+    -- draw chickens field of view
+    for i = 1, chickens_amount do
+        chicken = chickens.chickens_array[i]
+        spr(chickens.fieldview_sprite, chicken.fieldview_x, chicken.fieldview_y)
+    end
 
     -- draw chickens
     for i = 1, chickens_amount do
         chicken = chickens.chickens_array[i]
-        spr(chicken.current_animation[chicken.animation_index], tile_to_pixels(chicken.position_x), tile_to_pixels(chicken.position_y))
+        spr(chicken.current_animation[chicken.animation_index], chicken.position_x, chicken.position_y)
     end
+
+    -- draw foxy
+    spr(foxy.current_animation[foxy.animation_index], foxy.position_x, foxy.position_y)
 
 	for foliage_index=1,foliage_size do
 		spr(84, foliage[foliage_index].x, foliage[foliage_index].y)
@@ -216,7 +243,10 @@ function draw_game()
 	for decor_index=1,decor_size do
 		spr(decor[decor_index].sprite, decor[decor_index].x, decor[decor_index].y)
 	end
-		
+
+    if chickens.alert.visible then
+        spr(chickens.alert.sprite, chickens.alert.position_x, chickens.alert.position_y)
+    end
 end
 
 function draw_game_over()
@@ -271,6 +301,76 @@ function handle_buttons_game()
     end
 
     return has_moved
+end
+
+-- enemies behavior
+function lookfor_foxy(chicken)
+    chickens.alert.visible = false
+    if (chicken.current_animation == chickens.animations.walk.down or chicken.current_animation == chickens.animations.idle.peck) then
+        if (foxy_is_below(chicken)) then
+            chickens.fox_found = true
+            chickens.alert.visible = true
+        end
+
+    elseif (chicken.current_animation == chickens.animations.walk.right) then
+        if (foxy_is_rightside(chicken)) then
+            chickens.fox_found = true
+            chickens.alert.visible = true
+        end
+
+    elseif (chicken.current_animation == chickens.animations.walk.up) then
+        if (foxy_is_above(chicken)) then
+            chickens.fox_found = true
+            chickens.alert.visible = true
+        end
+
+    elseif (chicken.current_animation == chickens.animations.walk.left) then
+        if (foxy_is_leftside(chicken)) then
+            chickens.fox_found = true
+            chickens.alert.visible = true
+        end
+    end
+
+    if chickens.alert.visible then
+        chickens.alert.position_x = chicken.position_x
+        chickens.alert.position_y = chicken.position_y - tile_size
+    end
+end
+
+function foxy_is_below(chicken)
+    if (foxy.position_y >= chicken.position_y and foxy.position_y <= (chicken.position_y + tile_size) + (chicken.fieldview_size * tile_size) - 3) then
+        if ((foxy.position_x + 5 > chicken.position_x and foxy.position_x + 5 < chicken.position_x + tile_size) or (foxy.position_x >= chicken.position_x and foxy.position_x <= chicken.position_x + 4)) then
+            return true
+        end
+    end
+    return false
+end
+
+function foxy_is_rightside(chicken)
+    if (foxy.position_x >= chicken.position_x and foxy.position_x <= (chicken.position_x + tile_size) + (chicken.fieldview_size * tile_size)) then
+        if ((foxy.position_y + 5 > chicken.position_y and foxy.position_y + 5 < chicken.position_y + tile_size) or (foxy.position_y >= chicken.position_y and foxy.position_y <= chicken.position_y + 4)) then
+            return true
+        end
+    end
+    return false
+end
+
+function foxy_is_above(chicken)
+    if (foxy.position_y + tile_size <= chicken.position_y and foxy.position_y + tile_size >= (chicken.position_y - tile_size * chicken.fieldview_size)) then
+        if ((foxy.position_x + 5 > chicken.position_x and foxy.position_x + 5 < chicken.position_x + tile_size) or (foxy.position_x >= chicken.position_x and foxy.position_x <= chicken.position_x + 4)) then
+            return true
+        end
+    end
+    return false
+end
+
+function foxy_is_leftside(chicken)
+    if ((foxy.position_x + 5 >= chicken.position_x - tile_size and foxy.position_x + 5 < chicken.position_x) or (foxy.position_x <= chicken.position_x and foxy.position_x >= chicken.position_x - tile_size)) then
+        if ((foxy.position_y + 5 > chicken.position_y and foxy.position_y + 5 < chicken.position_y + tile_size) or (foxy.position_y >= chicken.position_y and foxy.position_y <= chicken.position_y + 4)) then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -339,22 +439,29 @@ function update_chicken_animation(chicken)
             chicken.animation_index = 1
         end
 
+        chicken.fieldview_x = chicken.position_x
+        chicken.fieldview_y = chicken.position_y
         if (chicken.in_idle > 0) then
             chicken.current_animation = chickens.animations.idle.peck
             chicken.current_animation_speed = chickens.animations.idle.animation_speed
+            chicken.fieldview_y = chicken.position_y + tile_size
         else
             chicken.current_animation_speed = chickens.animations.walk.animation_speed
             if (chicken.movement_dir == 1) then
                 if (chicken.patrol_dir == 1) then
-                    chicken.current_animation = chickens.animations.walk.up
+                    chicken.current_animation = chickens.animations.walk.down
+                    chicken.fieldview_y = chicken.position_y + tile_size
                 elseif (chicken.patrol_dir == 2) then
                     chicken.current_animation = chickens.animations.walk.right
+                    chicken.fieldview_x = chicken.position_x + tile_size
                 end
             elseif (chicken.movement_dir == -1) then
                 if (chicken.patrol_dir == 1) then
-                    chicken.current_animation = chickens.animations.walk.down
+                    chicken.current_animation = chickens.animations.walk.up
+                    chicken.fieldview_y = chicken.position_y - tile_size
                 elseif (chicken.patrol_dir == 2) then
                     chicken.current_animation = chickens.animations.walk.left
+                    chicken.fieldview_x = chicken.position_x - tile_size
                 end
             end
         end
@@ -393,17 +500,20 @@ function create_chicken()
     chicken = {}
 
     -- properties for drawing position
-    chicken.position_x = flr(rnd(18))
+    chicken.position_x = tile_to_pixels(flr(rnd(18)))
+    -- chicken.position_x = 20
     chicken.original_x = chicken.position_x
-    chicken.position_y = flr(rnd(7))
+    chicken.position_y = tile_to_pixels(flr(rnd(6)) + 1)
+    -- chicken.position_y = 20
     chicken.original_y = chicken.position_y
 
     -- properties for movement handling
     chicken.movement_dir = 1
     chicken.patrol_dir = flr(rnd(2)+1)
-    chicken.movement_speed = 5 + flr(rnd(5))
+    -- chicken.patrol_dir = 1
+    chicken.movement_speed = 1
     chicken.ori_movement_speed = chicken.movement_speed
-    chicken.max_distance = 4 + rnd(4)
+    chicken.max_distance = tile_to_pixels(4 + rnd(4))
     if (chicken.patrol_dir == 1 and tile_to_pixels(chicken.position_y + chicken.max_distance) > world_height - 8) then
         chicken.max_distance = ((world_height - 8) - tile_to_pixels(chicken.position_y)) / 8
     elseif (chicken.patrol_dir == 2 and tile_to_pixels(chicken.position_x + chicken.max_distance) > world_width - 8) then
@@ -419,6 +529,10 @@ function create_chicken()
     -- properties for timers
     chicken.wait_idle = 60
     chicken.in_idle = chicken.wait_idle
+
+    -- properties for field of view
+    chicken.fieldview_size = 1
+    chickens.alert_visible = false
 
     return chicken
 end
@@ -623,22 +737,22 @@ __gfx__
 00777700077777700077770000777700383333334444444446666664466666647777777733b338333b33833333b33833088888000088888005b7bb5005555550
 0077770000777700007777000077770033333330444444445545554555455545777777773333333033333333333333300d000d0000d000d0053bbb5000555500
 0000900000090000000090000009000003333330444444444444444444444444777777770333333003333330033333300d000d0000d000d00555555000555500
-000ff000000000000000000000000000455545554555455566666666666666660000000000888800000000000007700000000000000000000000000000000000
-00f77f00000ff00000ff00000000ff0049999994499999946c7cccc66cccc7c60000000000777700008888000008800000077000000000000000000000000000
-0f7777f000f77f000f77f000000f77f059666695596666956cc7ccc66cccccc60000000000177100007777000088880000077000000000000000000000000000
-0f7777f00f7777f0f7777f0000f7777f49666694496666946cccccc66cccccc60000000000799700001771000077770000777700000000000000000000000000
-f777777ff777777ff77777f00f77777f49999995499999956cccccc66cccccc60000000000777700007997000017710000777700000000000000000000000000
-6777777f6777777f6777777ff777777f4999aa9449aa99946cccccc66cccccc60000000000777700007777000079970000788700000000000000000000000000
-067777f0067777f0067777f0067777f0599999955999999566666666666666660000000000777700007777000077770000888800000000000000000000000000
-0066ff000066ff000066ff000066ff00499999944999999444444444444444440000000000099000000990000009900000099000000000000000000000000000
-000f1000000f10000070070700000000000000000000000000000000000aa0000000000000000000000000000000000000000000000000000000000000000000
-00f71f0000f71f0070000000700aa000000aa00000aa00000000aa0000aaaa000000000000000000000000000000000000000000000000000000000000000000
-0f7177f00f7177f00700007000aaaa0700aaaa000aaaa000000aaaa0001aa1000000000000000000000000000000000000000000000000000000000000000000
-0f7777f00f7717f00f0777f00f1aa100001aa10001aa10000001aa1000a88a000000000000000000000000000000000000000000000000000000000000000000
-f777777ff717771ff777777ff7a88a7f00a88a000a88a000000a88a00aaaaaa00000000000000000000000000000000000000000000000000000000000000000
-6777777f6777777f6777777f6777777f0aaaaaa000aaaaa00aaaaa0000aaaa000000000000000000000000000000000000000000000000000000000000000000
-067777f0067777f0067777f0067777f000aaaa000aaaaa0000aaaaa000aaaa000000000000000000000000000000000000000000000000000000000000000000
-0066ff000066ff000066ff000066ff00009aa900009aa900009aa900009aa9000000000000000000000000000000000000000000000000000000000000000000
+000ff000000000000000000000000000455545554555455566666666666666660ffffff000888800000000000007700000000000000000000000000000000000
+00f77f00000ff00000ff00000000ff0049999994499999946c7cccc66cccc7c60ff88ff000777700008888000008800000077000000000000000000000000000
+0f7777f000f77f000f77f000000f77f059666695596666956cc7ccc66cccccc60ff88ff000177100007777000088880000077000000000000000000000000000
+0f7777f00f7777f0f7777f0000f7777f49666694496666946cccccc66cccccc60ff88ff000799700001771000077770000777700000000000000000000000000
+f777777ff777777ff77777f00f77777f49999995499999956cccccc66cccccc60ffffff000777700007997000017710000777700000000000000000000000000
+6777777f6777777f6777777ff777777f4999aa9449aa99946cccccc66cccccc60ff88ff000777700007777000079970000788700000000000000000000000000
+067777f0067777f0067777f0067777f0599999955999999566666666666666660ffffff000777700007777000077770000888800000000000000000000000000
+0066ff000066ff000066ff000066ff0049999994499999944444444444444444000ff00000099000000990000009900000099000000000000000000000000000
+000f1000000f10000070070700000000000000000000000000000000000aa0000200200200000000000000000000000000000000000000000000000000000000
+00f71f0000f71f0070000000700aa000000aa00000aa00000000aa0000aaaa002002002000000000000000000000000000000000000000000000000000000000
+0f7177f00f7177f00700007000aaaa0700aaaa000aaaa000000aaaa0001aa1000020020000000000000000000000000000000000000000000000000000000000
+0f7777f00f7717f00f0777f00f1aa100001aa10001aa10000001aa1000a88a000200200200000000000000000000000000000000000000000000000000000000
+f777777ff717771ff777777ff7a88a7f00a88a000a88a000000a88a00aaaaaa02002002000000000000000000000000000000000000000000000000000000000
+6777777f6777777f6777777f6777777f0aaaaaa000aaaaa00aaaaa0000aaaa000020020000000000000000000000000000000000000000000000000000000000
+067777f0067777f0067777f0067777f000aaaa000aaaaa0000aaaaa000aaaa000200200200000000000000000000000000000000000000000000000000000000
+0066ff000066ff000066ff000066ff00009aa900009aa900009aa900009aa9002002002000000000000000000000000000000000000000000000000000000000
 00077000000070000007700000077000007007000077770000077000007777000007700000077000000770000077700000077000007770000077770000777700
 00700700000770000070070000700700007007000070000000700700000007000070070000700700007007000070070000700700007007000070000000700000
 00700700007070000000070000000700007007000070000000700000000007000070070000700700007007000070070000700000007007000070000000700000
