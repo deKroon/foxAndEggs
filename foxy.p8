@@ -171,12 +171,6 @@ function update_splash()
 end
 
 function update_game()
-    if foxy.lifes == 0 then
-        state = game_states.gameover
-        change_state()
-        return
-    end
-
     if chickens.alert.visible then
         foxy.catch_wait -= 1
         if foxy.catch_wait > 0 then
@@ -186,6 +180,12 @@ function update_game()
             foxy.position_x = 2
             foxy.position_y = 2
         end
+    end
+
+    if foxy.lifes == 0 then
+        state = game_states.gameover
+        change_state()
+        return
     end
 
     -- move chickens! move!
