@@ -27,6 +27,8 @@ camera_x = 0
 camera_y = 0
 splash = true
 
+roads_amount = 1
+
 -- we'll use this one to limit the animation to certain frames. otherwise it's too fast.
 animation_frames = 0
 
@@ -72,7 +74,7 @@ foxy.animations.victory_dance = { 54, 55, 54, 55, 53, 53, 52, 52 };
 foxy.animations.rotation = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 -- vars for chkickens creation
-chickens_amount = 10
+chickens_amount = 60
 -- chickens_amount = 1
 chickens = {}
 chickens.animation_size = 8
@@ -85,6 +87,7 @@ chickens.alert.position_x = 0
 chickens.alert.position_y = 0
 chickens.fieldview_sprite = 120
 chickens.fox_found = false
+chickens.places_for_chicken = {}
 
 chickens.animations.walk = {}
 chickens.animations.walk.animation_speed = 7
@@ -585,25 +588,35 @@ end
 function create_chicken()
     chicken = {}
 
+
+    -- pick a row for the chicken
+    local road = chickens.places_for_chicken[""..flr(rnd(roads_amount)) + 1]
+    if not road then
+        road = {x=flr(rnd(18)) + 1, y=flr(rnd(6)) + 1, pat=flr(rnd(1)) + 1, dir=1}
+    end
+
     -- properties for drawing position
-    chicken.position_x = tile_to_pixels(flr(rnd(18)))
+    chicken.position_x = tile_to_pixels(road.x)
+    -- chicken.position_x = tile_to_pixels(flr(rnd(18)) + 1)
     -- chicken.position_x = 20
     chicken.original_x = chicken.position_x
-    chicken.position_y = tile_to_pixels(flr(rnd(6)) + 1)
+    chicken.position_y = tile_to_pixels(road.y)
+    -- chicken.position_y = tile_to_pixels(flr(rnd(6)) + 1)
     -- chicken.position_y = 20
     chicken.original_y = chicken.position_y
 
     -- properties for movement handling
-    chicken.movement_dir = 1
-    chicken.patrol_dir = flr(rnd(2)+1)
+    chicken.movement_dir = road.dir
+    chicken.patrol_dir = road.pat
     -- chicken.patrol_dir = 1
     chicken.movement_speed = 1
     chicken.ori_movement_speed = chicken.movement_speed
     chicken.max_distance = tile_to_pixels(4 + rnd(4))
-    if (chicken.patrol_dir == 1 and tile_to_pixels(chicken.position_y + chicken.max_distance) > world_height - 8) then
-        chicken.max_distance = ((world_height - 8) - tile_to_pixels(chicken.position_y)) / 8
-    elseif (chicken.patrol_dir == 2 and tile_to_pixels(chicken.position_x + chicken.max_distance) > world_width - 8) then
-        chicken.max_distance = ((world_width - 8) - tile_to_pixels(chicken.position_x)) / 8
+
+    if (chicken.patrol_dir == 1 and chicken.position_y + chicken.max_distance > world_height - 8) then
+        chicken.max_distance = ((world_height - 8) - chicken.position_y) / 8
+    elseif (chicken.patrol_dir == 2 and chicken.position_x + chicken.max_distance > world_width - 8) then
+        chicken.max_distance = ((world_width - 8) - chicken.position_x) / 8
     end
 
     -- properties for animation
@@ -771,6 +784,8 @@ function maze_step(exp)
 			mset(exp.x, exp.y-2, 70)
 			new_exp = {x=exp.x, y=exp.y-2, dirs={1,2,4}}
 			add(expandables, new_exp)
+            chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y-2, pat=1, dir=-1}
+            roads_amount += 1
 		end
 	elseif(dir==2) then
 		if(is_grass(exp.x+2, exp.y)) then
@@ -778,6 +793,8 @@ function maze_step(exp)
 			mset(exp.x+2, exp.y, 70)
 			new_exp = {x=exp.x+2, y=exp.y, dirs={1,2,3}}
 			add(expandables, new_exp)
+            chickens.places_for_chicken[""..roads_amount] = {x=exp.x+2, y=exp.y, pat=2, dir=1}
+            roads_amount += 1
 		end
 	elseif(dir==3) then
 		if(is_grass(exp.x, exp.y+2)) then
@@ -785,6 +802,8 @@ function maze_step(exp)
 			mset(exp.x, exp.y+2, 70)
 			new_exp = {x=exp.x, y=exp.y+2, dirs={2,3,4}}
 			add(expandables, new_exp)
+            chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y+2, pat=1, dir=1}
+            roads_amount += 1
 		end
 	else
 		if(is_grass(exp.x-2, exp.y)) then
@@ -792,6 +811,8 @@ function maze_step(exp)
 			mset(exp.x-2, exp.y, 70)
 			new_exp = {x=exp.x-2, y=exp.y, dirs={1,3,4}}
 			add(expandables, new_exp)
+            chickens.places_for_chicken[""..roads_amount] = {x=exp.x-2, y=exp.y, pat=2, dir=-1}
+            roads_amount += 1
 		end
 	end
 end
