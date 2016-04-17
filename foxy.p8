@@ -295,7 +295,7 @@ function handle_buttons_game()
     has_moved = false
     -- left
     if btn(0) then
-        if foxy.position_x - foxy.speed >= 0 then
+        if can_move(foxy.position_x - foxy.speed, foxy.position_y) then
             foxy.position_x -= foxy.speed
             has_moved = true
 			foxy.current_animation = foxy.animations.walk.left
@@ -303,7 +303,7 @@ function handle_buttons_game()
 
     -- right
     elseif btn(1) then
-        if (foxy.position_x + foxy.speed) < world_width then
+        if can_move(foxy.position_x + foxy.speed, foxy.position_y) then
             foxy.position_x += foxy.speed
             has_moved = true
 			foxy.current_animation = foxy.animations.walk.right
@@ -311,7 +311,7 @@ function handle_buttons_game()
 
     -- up
     elseif btn(2) then
-        if foxy.position_y - foxy.speed >= 0 then
+        if can_move(foxy.position_x, foxy.position_y - foxy.speed) then
             foxy.position_y -= foxy.speed
             has_moved = true
 			foxy.current_animation = foxy.animations.walk.up
@@ -319,7 +319,7 @@ function handle_buttons_game()
 
     -- down
     elseif btn(3) then
-        if (foxy.position_y + foxy.speed) < world_height then
+        if can_move(foxy.position_x, foxy.position_y + foxy.speed) then
             foxy.position_y += foxy.speed
             has_moved = true
 			foxy.current_animation = foxy.animations.walk.down
@@ -327,6 +327,31 @@ function handle_buttons_game()
     end
 
     return has_moved
+end
+
+-- collision detection 
+
+-- objects to collide with. these will be windows, walls, etc
+collision_objects = { 71, 86, 87, 102, 103 }
+
+function can_move(x, y)
+    -- check the edges of the world first
+    if x < 0 or x > world_width  or 
+       y < 0 or y > world_height then
+        return false
+    end
+
+    -- check if the tile is a collision object
+    local tile = mget(pixels_to_tile(x),pixels_to_tile(y))
+
+
+    for _ , value in pairs(collision_objects) do
+        if value == tile then
+            return false
+        end
+    end 
+
+    return true
 end
 
 -- enemies behavior
@@ -515,12 +540,18 @@ end
 
 -- util
 
+-- since there's no math.ceil, we have to implement ourselves. 
+-- solution seen in https://gist.github.com/josefnpat/bfe4aaa5bbb44f572cd0
+function ceil(x) 
+    return -flr(-x)
+end
+
 function tile_to_pixels(tile)
     return tile * tile_size
 end
 
 function pixels_to_tile(pixel)
-    return flr(pixel / tile_size)
+    return ceil(pixel / tile_size)
 end
 
 function create_chicken()
