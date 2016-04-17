@@ -642,12 +642,6 @@ function generate_map()
 	-- dungeon maze hybrid
 	generate_base()
 	
-	-- add buildings
-	--[[
-		add_buildings()
-		add_windows()
-		add_doors()
-	]]--
 	-- add foliage and decor
 	 add_decor()
 	
@@ -668,9 +662,24 @@ function generate_base()
 	add_doors()
 end
 
+horizontal_segs = {}
 function add_doors()
-
-
+	segment = {}
+	for y=0,rows do
+		for x=0,cols do
+			if(mget(x,y)==71 and (mget(x,y+1)==70 or mget(x,y-1)==70) and (mget(x,y+1)==85 or mget(x,y-1)==85)) then
+				seg_piece = {x=x,y=y}
+				add(segment, seg_piece)
+			elseif(#segment>0) then
+				add(horizontal_segs, segment)
+				segment = {}
+			end
+		end
+	end
+	for segment in all(horizontal_segs) do
+		door_loc = segment[flr(rnd(#segment)+1)]
+		mset(door_loc.x, door_loc.y,  100)
+	end
 end
 
 expandable = {x=0, y=0, dirs = {1,2,3,4}}
@@ -973,14 +982,6 @@ function add_building()
 			mset(x,y,85)
 		end		
 	end
-end
-
-function add_doors()
-
-end
-
-function add_windows()
-
 end
 
 function add_decor()
