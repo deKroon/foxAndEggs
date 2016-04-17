@@ -195,7 +195,9 @@ function update_game()
 
       if has_moved then
         -- step sound
-        sfx(63,3)
+		if(config.music) then
+			sfx(63,3)
+		end
         foxy.animation_speed = 7
         foxy.is_idle = false
       elseif not foxy.is_idle then
@@ -606,11 +608,131 @@ end
 rectangles = {}
 function generate_base()
 	-- Add the buildings
-	add_rectangles(50)
+	add_rectangles(30)
 	draw_rectangles()
 
 	-- Add the roads
-	add_roads()
+	maze_gen()
+	
+	-- Add doors 
+	add_doors()
+end
+
+function add_doors()
+
+
+end
+
+expandable = {x=0, y=0, dirs = {1,2,3,4}}
+expandables = {expandable}
+function maze_gen()
+mset(0,0,70)
+	-- Generate dense maze
+	while #expandables>0 do
+		maze_step(expandables[flr(rnd(#expandables)+1)])
+	end
+	
+	-- Sparseness step
+	sparseness=3
+	roads_to_remove = {}
+	for i=0,sparseness do
+		for x=0,cols do
+			for y=0,rows do
+				if(mget(x,y)==70 and dead_end(x,y)) then
+					add(roads_to_remove, {x=x, y=y})
+				end
+			end
+		end
+		for road in all(roads_to_remove) do
+			mset(road.x, road.y, 68)
+		end
+	end
+	for x=0,cols do
+		for y=0,rows do
+			if(not mget(x,y)==70 or (mget(x-1,y)==70 and mget(x+1,y)==70) or (mget(x,y-1)==70 and mget(x,y+1)==70)) then
+				mset(x,y,70)
+			end
+		end
+	end
+end
+
+function dead_end(x,y)
+	sides = 0
+	if(mget(x, y-1)==70) then
+		sides+=1
+	end
+	if(mget(x+1, y)==70) then
+		sides+=1
+	end
+	if(mget(x, y+1)==70) then
+		sides+=1
+	end
+	if(mget(x-1, y)==70) then
+		sides+=1
+	end
+	if sides<=1 then
+		return true
+	end
+	return false
+end
+
+function maze_step(exp)
+	if(#exp.dirs<=0) then
+		del(expandables, exp)
+		return 
+	end
+	dir = exp.dirs[flr(rnd(#exp.dirs)+1)]
+	del(exp.dirs, dir)
+	if(dir==1) then
+		if(is_grass(exp.x, exp.y-2)) then
+			mset(exp.x, exp.y-1, 70)
+			mset(exp.x, exp.y-2, 70)
+			new_exp = {x=exp.x, y=exp.y-2, dirs={1,2,4}}
+			add(expandables, new_exp)
+		end
+	elseif(dir==2) then
+		if(is_grass(exp.x+2, exp.y)) then
+			mset(exp.x+1, exp.y, 70)
+			mset(exp.x+2, exp.y, 70)
+			new_exp = {x=exp.x+2, y=exp.y, dirs={1,2,3}}
+			add(expandables, new_exp)
+		end
+	elseif(dir==3) then
+		if(is_grass(exp.x, exp.y+2)) then
+			mset(exp.x, exp.y+1, 70)
+			mset(exp.x, exp.y+2, 70)
+			new_exp = {x=exp.x, y=exp.y+2, dirs={2,3,4}}
+			add(expandables, new_exp)
+		end
+	else
+		if(is_grass(exp.x-2, exp.y)) then
+			mset(exp.x-1, exp.y, 70)
+			mset(exp.x-2, exp.y, 70)
+			new_exp = {x=exp.x-2, y=exp.y, dirs={1,3,4}}
+			add(expandables, new_exp)
+		end
+	end
+end
+
+function valid_road_spot(x,y)
+	-- No crossovers 
+	if(road_placable(x-1,y) and road_placable(x+1,y)) then
+		return false
+	elseif(road_placable(x,y-1) and road_placable(x,y+1)) then
+		return false
+	elseif(road_placable(x-1,y-1) and road_placable(x+1,y+1)) then
+		return false
+	elseif(road_placable(x+1,y-1) and road_placable(x-1,y+1)) then
+		return false
+	end
+	return true
+end
+
+function road_placable(x,y) 
+	if(mget(x,y)==70 or mget(x,y))==85 then
+		return true
+	end
+	return false
 end
 
 road_worker = {x=1, y=1, dirs={1,2,3,4}, dir=flr(rnd(4)+1), prob=0.1}
@@ -693,14 +815,14 @@ end
 function add_rectangles(retries)
 	orig_retries = retries
 	while(retries>0) do
-		rect_w = flr(rnd(12))+4
-		rect_h = flr(rnd(8))+4
-		rect_x = flr(rnd(cols - rect_w-8)+8)
-		rect_y = flr(rnd(rows - rect_h))
+		rect_w = flr(rnd(6))*2+4
+		rect_h = flr(rnd(4))*2+4
+		rect_x = flr(rnd((cols - rect_w-4)/2)+4)*2-1
+		rect_y = flr(rnd((rows - rect_h)/2))*2-1
 		rect_placable = true
 		for i=1,#rectangles do 
 			rect = rectangles[i]
-			if (rect.x <= rect_x+rect_w and rect.x+rect.w >= rect_x )then
+			if (rect.x <= rect_x+rect_w-2 and rect.x+rect.w-2 >= rect_x )then
 				if (rect.y <= rect_y+rect_h and rect.y+rect.h >= rect_y) then
 					rect_placable = false
 					retries -= 1
@@ -835,7 +957,7 @@ function add_random_decor(x,y)
 end
 
 function add_bush(x,y)
-	if (flr(rnd(100))<=10) then
+	if (flr(rnd(100))<=25) then
 		decor_size += 1
 		decor[decor_size] = {}
 		decor[decor_size].x = x
@@ -896,7 +1018,7 @@ function draw_debug_minimap()
 			tile = mget(start_x+x,start_y+y)
 			tile_x = tile%16
 			tile_y = tile/16
-			color = sget(tile_x*8+5,tile_y*8+5)
+			color = sget(tile_x*8+1,tile_y*8+1)
 
 			pset(camera_x+x,camera_y+y+32,color)
 		end
