@@ -301,7 +301,7 @@ function draw_game()
 end
 
 function draw_game_over()
-    camera(camera_x,camera_y)
+    camera(0,0)
      -- draw the splash
     map(120,8, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
 end
