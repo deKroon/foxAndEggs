@@ -36,6 +36,7 @@ foxy.position_y = 2
 foxy.speed = 1
 foxy.lifes = 3
 foxy.heart_sprite = 121
+foxy.catch_wait = 10
 -- indexes start in 1 in lua. wtf!
 foxy.animation_index = 1
 foxy.is_idle = false
@@ -157,7 +158,7 @@ function change_state()
     elseif state == game_states.game then
         state = game_states.gameover
     elseif state == game_states.gameover then
-        state = game_states.splash
+        -- state = game_states.splash
         music(12,1000,3)
     end
 end
@@ -174,6 +175,17 @@ function update_game()
         state = game_states.gameover
         change_state()
         return
+    end
+
+    if chickens.alert.visible then
+        foxy.catch_wait -= 1
+        if foxy.catch_wait > 0 then
+            return
+        else
+            foxy.catch_wait = 10
+            foxy.position_x = 2
+            foxy.position_y = 2
+        end
     end
 
     -- move chickens! move!
@@ -277,7 +289,8 @@ function draw_game()
 
     -- draw the lifes of the fox
     for hearts=1,foxy.lifes do
-        spr(foxy.heart_sprite, 1 + (tile_size * (hearts % foxy.lifes)), 1)
+        -- pset(camera_x+fox_x+48, camera_y+fox_y+48,9)
+        spr(foxy.heart_sprite, camera_x + (scene_width - 8) - (tile_size * (hearts % foxy.lifes)), camera_y + 1)
     end
 
 	if not config.debug then
@@ -288,7 +301,7 @@ function draw_game()
 end
 
 function draw_game_over()
-        camera(camera_x,camera_y)
+    camera(camera_x,camera_y)
      -- draw the splash
     map(120,8, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
 end
@@ -397,8 +410,6 @@ function lookfor_foxy(chicken)
 
     if chickens.alert.visible then
         foxy.lifes -= 1
-        foxy.position_x = 2
-        foxy.position_y = 2
         chickens.alert.position_x = chicken.position_x
         chickens.alert.position_y = chicken.position_y - tile_size
         sfx(61,3)
