@@ -34,6 +34,8 @@ foxy = {}
 foxy.position_x = 2
 foxy.position_y = 2
 foxy.speed = 1
+foxy.lifes = 3
+foxy.heart_sprite = 121
 -- indexes start in 1 in lua. wtf!
 foxy.animation_index = 1
 foxy.is_idle = false
@@ -168,6 +170,12 @@ function update_splash()
 end
 
 function update_game()
+    if foxy.lifes == 0 then
+        state = game_states.gameover
+        change_state()
+        return
+    end
+
     -- move chickens! move!
     chickens.fox_found = false
     for i = 1, chickens_amount do
@@ -266,7 +274,12 @@ function draw_game()
     if chickens.alert.visible then
         spr(chickens.alert.sprite, chickens.alert.position_x, chickens.alert.position_y)
     end
-	
+
+    -- draw the lifes of the fox
+    for hearts=1,foxy.lifes do
+        spr(foxy.heart_sprite, 1 + (tile_size * (hearts % foxy.lifes)), 1)
+    end
+
 	if not config.debug then
 		draw_minimap()
 	else 
@@ -358,6 +371,9 @@ function lookfor_foxy(chicken)
     end
 
     if chickens.alert.visible then
+        foxy.lifes -= 1
+        foxy.position_x = 2
+        foxy.position_y = 2
         chickens.alert.position_x = chicken.position_x
         chickens.alert.position_y = chicken.position_y - tile_size
         sfx(61,3)
