@@ -1067,7 +1067,7 @@ function draw_minimap()
 			tile = mget(start_x+x,start_y+y)
 			tile_x = tile%16
 			tile_y = tile/16
-			color = sget(tile_x*8,tile_y*8)
+			color = sget(tile_x*8+1,tile_y*8)
 
 			pset(camera_x+48+x,camera_y+48+y,color)
 		end
@@ -1092,7 +1092,7 @@ function draw_debug_minimap()
 			tile = mget(start_x+x,start_y+y)
 			tile_x = tile%16
 			tile_y = tile/16
-			color = sget(tile_x*8,tile_y*8)
+			color = sget(tile_x*8+1,tile_y*8)
 
 			pset(camera_x+x,camera_y+y+32,color)
 		end
