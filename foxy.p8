@@ -750,7 +750,7 @@ function generate_base()
 	 
 	 for x=0,cols do
 		for y= 0,rows do
-			if( is_road(x,y)) then
+			if((x>=8 or y>=8) and is_road(x,y)) then
 				if is_road(x, y-1) and not is_road(x, y+1) then 
 					add(chickens.places_for_chicken, {x=x, y=y, pat=1, dir=-1})
 				elseif is_road(x, y+1) and not is_road(x, y-1) then 
