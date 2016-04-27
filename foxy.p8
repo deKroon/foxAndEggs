@@ -27,7 +27,7 @@ camera_x = 0
 camera_y = 0
 splash = true
 
-roads_amount = 1
+roads_amount = 0
 
 -- we'll use this one to limit the animation to certain frames. otherwise it's too fast.
 animation_frames = 0
@@ -75,7 +75,7 @@ foxy.animations.victory_dance = { 54, 55, 54, 55, 53, 53, 52, 52 };
 foxy.animations.rotation = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 -- vars for chkickens creation
-chickens_amount = 60
+chickens_amount = 30
 -- chickens_amount = 1
 chickens = {}
 chickens.animation_size = 8
@@ -621,10 +621,10 @@ function create_chicken()
 
 
     -- pick a row for the chicken
-    local road = chickens.places_for_chicken[""..flr(rnd(roads_amount)) + 1]
-    if not road then
-        road = {x=flr(rnd(18)) + 1, y=flr(rnd(6)) + 1, pat=flr(rnd(1)) + 1, dir=1}
-    end
+    local road = chickens.places_for_chicken[flr(rnd(#chickens.places_for_chicken)+ 1) ]
+    --if not road then
+    --    road = {x=flr(rnd(18)) + 1, y=flr(rnd(6)) + 1, pat=flr(rnd(1)) + 1, dir=1}
+    --end
 
     -- properties for drawing position
     chicken.position_x = tile_to_pixels(road.x)
@@ -742,6 +742,43 @@ function generate_base()
 	
 	-- add foliage and decor
 	 add_decor()
+	 
+	 for x=0,cols do
+		for y= 0,rows do
+			if( is_road(x,y)) then
+				if is_road(x, y-1) and not is_road(x, y+1) then 
+					add(chickens.places_for_chicken, {x=x, y=y, pat=1, dir=-1})
+				elseif is_road(x, y+1) and not is_road(x, y-1) then 
+					add(chickens.places_for_chicken, {x=x, y=y, pat=1, dir=1})
+				end
+				if is_road(x+1, y) and not is_road(x-1, y) then 
+					add(chickens.places_for_chicken, {x=x, y=y, pat=2, dir=1})
+				elseif is_road(x-1, y) and not is_road(x+1, y) then 
+					add(chickens.places_for_chicken, {x=x, y=y, pat=2, dir=-1})
+				end
+			end
+		end
+	end
+	if config.debug then
+		for place in all(chickens.places_for_chicken) do 
+			if place.pat==1 then 
+				if place.dir==-1 then 
+					mset(place.x,place.y,122)
+				else
+					mset(place.x,place.y,124)
+				end
+			end
+			if place.pat==2 then 
+				if place.dir==-1 then 
+					mset(place.x,place.y,125)
+				else
+					mset(place.x,place.y,123)
+				end
+			end
+		end
+	end
+	
+	 
 end
 
 horizontal_segs = {}
@@ -848,8 +885,8 @@ function maze_step(exp)
 			mset(exp.x, exp.y-2, 70)
 			new_exp = {x=exp.x, y=exp.y-2, dirs={1,2,4}}
 			add(expandables, new_exp)
-            chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y-2, pat=1, dir=-1}
-            roads_amount += 1
+            --chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y-2, pat=1, dir=-1}
+            --roads_amount += 1
 		end
 	elseif(dir==2) then
 		if(is_grass(exp.x+2, exp.y)) then
@@ -857,8 +894,8 @@ function maze_step(exp)
 			mset(exp.x+2, exp.y, 70)
 			new_exp = {x=exp.x+2, y=exp.y, dirs={1,2,3}}
 			add(expandables, new_exp)
-            chickens.places_for_chicken[""..roads_amount] = {x=exp.x+2, y=exp.y, pat=2, dir=1}
-            roads_amount += 1
+            --chickens.places_for_chicken[""..roads_amount] = {x=exp.x+2, y=exp.y, pat=2, dir=1}
+            --roads_amount += 1
 		end
 	elseif(dir==3) then
 		if(is_grass(exp.x, exp.y+2)) then
@@ -866,8 +903,8 @@ function maze_step(exp)
 			mset(exp.x, exp.y+2, 70)
 			new_exp = {x=exp.x, y=exp.y+2, dirs={2,3,4}}
 			add(expandables, new_exp)
-            chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y+2, pat=1, dir=1}
-            roads_amount += 1
+            --chickens.places_for_chicken[""..roads_amount] = {x=exp.x, y=exp.y+2, pat=1, dir=1}
+            --roads_amount += 1
 		end
 	else
 		if(is_grass(exp.x-2, exp.y)) then
@@ -875,8 +912,8 @@ function maze_step(exp)
 			mset(exp.x-2, exp.y, 70)
 			new_exp = {x=exp.x-2, y=exp.y, dirs={1,3,4}}
 			add(expandables, new_exp)
-            chickens.places_for_chicken[""..roads_amount] = {x=exp.x-2, y=exp.y, pat=2, dir=-1}
-            roads_amount += 1
+            --chickens.places_for_chicken[""..roads_amount] = {x=exp.x-2, y=exp.y, pat=2, dir=-1}
+            --roads_amount += 1
 		end
 	end
 end
@@ -1255,14 +1292,14 @@ f777777ff777777ff77777f00f77777f69999996699999966cccccc66cccccc60ffffff000777700
 6777777f6777777f6777777ff777777f6999aa9669aa99966cccccc66cccccc60ff88ff000777700007777000079970000788700954444494900009500000000
 067777f0067777f0067777f0067777f0699999966999999666666666666666660ffffff000777700007777000077770000888800948888894900009400000000
 0066ff000066ff000066ff000066ff0069999996699999965545554555455545000ff00000099000000990000009900000099000988888895900009500000000
-000f1000000f10000070070700000000400000044000000400000000000aa0000200200200000000000000000000000000000000000000094000000400000000
-00f71f0000f71f0070000000700aa000000aa00000aa00000000aa0000aaaa00200200200ee0fe00000000000000000000000000000000000000000000000000
-0f7177f00f7177f00700007000aaaa0700aaaa000aaaa000000aaaa0001aa10000200200eeee7fe0000000000000000000000000000000000000000000000000
-0f7777f00f7717f00f0777f00f1aa100001aa10001aa10000001aa1000a88a0002002002eeeee7f0000000000000000000000000000000000000000000000000
-f777777ff717771ff777777ff7a88a7f00a88a000a88a000000a88a00aaaaaa0200200208eeeeef0000000000000000000000000000000000000000000000000
-6777777f6777777f6777777f6777777f0aaaaaa000aaaaa00aaaaa0000aaaa000020020008eeee00000000000000000000000000000000000000000000000000
-067777f0067777f0067777f0067777f000aaaa000aaaaa0000aaaaa000aaaa0002002002008ee000000000000000000000000000000000000000000000000000
-0066ff000066ff000066ff000066ff00009aa900009aa900009aa900009aa9002002002000080000000000000000000000000000000000000000000000000000
+000f1000000f10000070070700000000400000044000000400000000000aa0000200200200000000888888887777777877777777877777774000000400000000
+00f71f0000f71f0070000000700aa000000aa00000aa00000000aa0000aaaa00200200200ee0fe00777777777777777877777777877777770000000000000000
+0f7177f00f7177f00700007000aaaa0700aaaa000aaaa000000aaaa0001aa10000200200eeee7fe0777777777777777877777777877777770000000000000000
+0f7777f00f7717f00f0777f00f1aa100001aa10001aa10000001aa1000a88a0002002002eeeee7f0777777777777777877777777877777770000000000000000
+f777777ff717771ff777777ff7a88a7f00a88a000a88a000000a88a00aaaaaa0200200208eeeeef0777777777777777877777777877777770000000000000000
+6777777f6777777f6777777f6777777f0aaaaaa000aaaaa00aaaaa0000aaaa000020020008eeee00777777777777777877777777877777770000000000000000
+067777f0067777f0067777f0067777f000aaaa000aaaaa0000aaaaa000aaaa0002002002008ee000777777777777777877777777877777770000000000000000
+0066ff000066ff000066ff000066ff00009aa900009aa900009aa900009aa9002002002000080000777777777777777888888888877777770000000000000000
 00077000000070000007700000077000007007000077770000077000007777000007700000077000000770000077700000077000007770000077770000777700
 00700700000770000070070000700700007007000070000000700700000007000070070000700700007007000070070000700700007007000070000000700000
 00700700007070000000070000000700007007000070000000700000000007000070070000700700007007000070070000700000007007000070000000700000
