@@ -334,7 +334,7 @@ function draw_game_over()
 	 -- draw the splash
 	map(120,8, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
 	digit_1 = flr(foxy.eggs/10) or 0
-	digit_2 = foxy.eggs-digit_1 or 0
+	digit_2 = foxy.eggs-digit_1*10 or 0
 	mset(124, 14, 128+digit_1)
 	mset(125, 14, 128+digit_2)
 	
