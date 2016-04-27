@@ -11,11 +11,11 @@ poke(0x5f2c,3)
 -- config stuff
 config = {}
 config.debug = false
-config.music = true
+config.music = false
 
 tile_size = 8
 -- total map size (we use 120 and up for splash
-cols = 118
+cols = 64
 rows = 32
 world_width = cols * tile_size
 world_height = rows * tile_size
@@ -777,7 +777,11 @@ function maze_gen()
 mset(0,0,70)
 	-- generate dense maze
 	while #expandables>0 do
-		maze_step(expandables[flr(rnd(#expandables)+1)])
+		expandable = expandables[flr(rnd(#expandables)+1)]
+		maze_step(expandable)
+		if(#expandables>15) then
+			del(expandables, expandable)
+		end
 	end
 	
 	-- sparseness step
@@ -806,19 +810,26 @@ end
 
 function dead_end(x,y)
 	sides = 0
-	if(mget(x, y-1)==70) then
+	if(is_road(x, y-1) or mget(x, y-1)==71) then
 		sides+=1
 	end
-	if(mget(x+1, y)==70) then
+	if(is_road(x+1, y)or mget(x+1, y)==71) then
 		sides+=1
 	end
-	if(mget(x, y+1)==70) then
+	if(is_road(x, y+1)or mget(x, y+1)==71) then
 		sides+=1
 	end
-	if(mget(x-1, y)==70) then
+	if(is_road(x-1, y)or mget(x-1, y)==71) then
 		sides+=1
 	end
 	if sides<=1 then
+		return true
+	end
+	return false
+end
+
+function is_road(x,y)
+	if(mget(x, y)==70) or mget(x,y)==85 then
 		return true
 	end
 	return false
