@@ -275,23 +275,22 @@ function draw_game()
     camera(camera_x,camera_y)
 
     -- draw the complete map
-    map(0,0, 0,0, pixels_to_tile(world_width), pixels_to_tile(world_height))
-
-    -- draw chickens field of view
-    for i = 1, chickens_amount do
-        chicken = chickens.chickens_array[i]
-        spr(chickens.fieldview_sprite, chicken.fieldview_x, chicken.fieldview_y)
-    end
+    map(0,0, 0,0, cols, rows)
 
     -- draw chickens
     for i = 1, chickens_amount do
         chicken = chickens.chickens_array[i]
-        spr(chicken.current_animation[chicken.animation_index], chicken.position_x, chicken.position_y)
+		if (camera_x-8) < chicken.position_x and chicken.position_x < camera_x+72 and (camera_y-8) < chicken.position_y and chicken.position_y < camera_y+72 then
+			spr(chickens.fieldview_sprite, chicken.fieldview_x, chicken.fieldview_y)
+			spr(chicken.current_animation[chicken.animation_index], chicken.position_x, chicken.position_y)
+		end
     end
 
 	-- Draw Eggs
     for egg in all(eggs) do
+		if (camera_x-8) < egg.x and egg.x < camera_x+72 and (camera_y-8) < egg.y and egg.y < camera_y+72 then
         spr(egg.sprite, egg.x, egg.y)
+		end
     end
 	
 	foxy_drawn = false
