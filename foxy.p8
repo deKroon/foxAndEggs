@@ -402,7 +402,7 @@ function can_move(x, y)
     end
 
     -- check if the tile is a collision object
-    local tile =  mget(pixels_to_tile(x), pixels_to_tile(y))
+    local tile =  mget(pixels_to_tile(x-1), pixels_to_tile(y))
     local tile2 = mget(pixels_to_tile(x-6), pixels_to_tile(y))
 
     for test_tile in all(collision_objects) do
