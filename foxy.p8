@@ -26,6 +26,8 @@ scene_height = 64
 camera_x = 0
 camera_y = 0
 splash = true
+show_minimap = true
+
 
 roads_amount = 0
 
@@ -323,7 +325,9 @@ function draw_game()
 	spr(128+digit_2, camera_x+8, camera_y)
 	
 	if not config.debug then
-		draw_minimap()
+		if show_minimap then 
+			draw_minimap()
+		end
 	else 
 		draw_debug_minimap()
 	end
@@ -384,6 +388,8 @@ function handle_buttons_game()
             has_moved = true
 			foxy.current_animation = foxy.animations.walk.down
         end
+    elseif btnp(4) then
+		show_minimap = not show_minimap
     end
 
     return has_moved
