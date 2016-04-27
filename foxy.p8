@@ -11,7 +11,7 @@ poke(0x5f2c,3)
 -- config stuff
 config = {}
 config.debug = false
-config.music = false
+config.music = true
 
 tile_size = 8
 -- total map size (we use 120 and up for splash
@@ -944,82 +944,6 @@ function road_placable(x,y)
 	return false
 end
 
-road_worker = {x=1, y=1, dirs={1,2,3,4}, dir=flr(rnd(4)+1), prob=0.1}
-workers = {road_worker}
-function add_roads()
-	-- place workers on map
-	for x=0,cols do
-		for y=0,rows do
-			if is_grass(x,y) then
-				if(rnd(1)<0.005) then
-					add(workers, {x=x, y=y, dirs={1,2,3,4}, dir=flr(rnd(4)+1), prob=0.1})
-				end	
-			end
-		end
-	end
-
-	-- while alive workers
-	while #workers>0 do
-		-- for each worker take 1 step
-		for worker in all(workers) do
-			worker_step(worker)
-		end
-	end
-end
-
-function worker_step(worker)
-	mset(worker.x, worker.y, 70)
-	take_step(worker)
-	if(rnd(1)<worker.prob) then
-		worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
-		if(rnd(1)<0.01) then
-			new_worker = {x=worker.x, y=worker.y, dir=1, dirs={1,2,3,4}, prob=0.1}
-			add(workers, new_worker)
-		end
-	end	
-
-	if(#worker.dirs<=0) then
-		del(workers, worker)
-	end	
-	
-end
-
-function take_step(worker) 
-	if(worker.dir==1) then
-		if worker.y-1>0 and is_grass(worker.x, worker.y-1)  then
-			worker.dirs = {1,2,3,4}
-			worker.y -= 1
-		else
-			del(worker.dirs, 1)
-			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
-		end
-	elseif(worker.dir==2) then
-		if worker.x+1<cols-1 and is_grass(worker.x+1, worker.y)  then
-			worker.dirs = {1,2,3,4}
-			worker.x+=1
-		else
-			del(worker.dirs, 2)
-			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
-		end
-	elseif(worker.dir==3) then
-		if worker.y+1<rows-1 and is_grass(worker.x, worker.y+1)  then
-			worker.dirs = {1,2,3,4}
-			worker.y+=1
-		else
-			del(worker.dirs, 3)
-			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
-		end
-	else
-		if worker.x-1>0 and is_grass(worker.x-1, worker.y) then
-			worker.dirs = {1,2,3,4}
-			worker.x-=1
-		else
-			del(worker.dirs, 4)
-			worker.dir = worker.dirs[flr(rnd(#worker.dirs)+1)]
-		end
-	end
-
-end
 
 function add_rectangles(retries)
 	orig_retries = retries
@@ -1089,29 +1013,6 @@ end
 
 roads ={}
 roads_index = 1
-
-
--- function to make buildings
-function add_buildings()
-
-	--[[
-	for i=0,flr(rnd(8))+8 do
-		add_building()
-	end
-	for x=0,cols do
-		for y=0,rows do
-			if mget(x,y)==85 then
-				if is_grass(x-1,y) or
-					is_grass(x+1,y) or
-					is_grass(x,y-1) or
-					is_grass(x,y+1) then
-					mset(x,y,71)
-				end
-			end
-		end		
-	end
-	]]--
-end
 
 -- algorithm for building is drop random rectangles (may overlap)
 function add_building()
